@@ -1,0 +1,1427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Superman Wristwatch — Nick</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --suit-blue:#1a3a8a;--cape-red:#b01020;--gold:#f5d76e;--chrome:#c8d0dc;
+  --panel:#0d1526;--panel-border:#2a4570;--text:#e8eef8;--muted:#8aa0c0;
+  --accent:#e8c547;--danger:#ff3355;--ok:#3dffa8;
+  --strap:#1a2a55;--case:#b8c0cc;
+  --watch-size:min(82vw,380px);
+}
+html,body{height:100%;}
+body{
+  font-family:"Segoe UI",system-ui,-apple-system,sans-serif;
+  color:var(--text);
+  background:#0a1020;
+  overflow-x:hidden;
+  min-height:100vh;
+}
+/* ========== BACKGROUNDS ========== */
+#bg-layer{
+  position:fixed;inset:0;z-index:0;overflow:hidden;
+  transition:background .6s ease;
+}
+.bg-suit-blue{
+  background:
+    radial-gradient(ellipse at 30% 20%,rgba(60,100,200,.35),transparent 50%),
+    radial-gradient(ellipse at 70% 80%,rgba(20,40,120,.5),transparent 50%),
+    linear-gradient(160deg,#071530 0%,#1e4aaa 35%,#153878 70%,#0a1c48 100%);
+}
+.bg-suit-blue::before{
+  content:"";position:absolute;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='46' viewBox='0 0 40 46'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0%25' stop-color='%235a8ae8' stop-opacity='.75'/%3E%3Cstop offset='45%25' stop-color='%232a5ab0' stop-opacity='.55'/%3E%3Cstop offset='100%25' stop-color='%23081438' stop-opacity='.85'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M20 1.5 L37 11.5 L37 31.5 L20 41.5 L3 31.5 L3 11.5 Z' fill='url(%23g)' stroke='%237eb0ff' stroke-width='.7'/%3E%3Cpath d='M20 7 L31 13.5 L31 28 L20 34.5 L9 28 L9 13.5 Z' fill='none' stroke='%23c0dcff' stroke-width='.4' opacity='.55'/%3E%3Cpath d='M20 1.5 L37 11.5' stroke='%23a8ccff' stroke-width='.5' opacity='.5'/%3E%3C/svg%3E");
+  background-size:40px 46px;
+  opacity:1;
+  mix-blend-mode:soft-light;
+  animation:fabricShift 28s linear infinite;
+  filter:contrast(1.15) brightness(1.05);
+}
+.bg-suit-blue::after{
+  content:"";position:absolute;inset:0;
+  background:
+    radial-gradient(circle at 50% 40%,transparent 30%,rgba(0,10,40,.55) 100%),
+    repeating-linear-gradient(90deg,transparent,transparent 47px,rgba(255,255,255,.03) 48px);
+  pointer-events:none;
+}
+@keyframes fabricShift{0%{background-position:0 0}100%{background-position:40px 46px}}
+
+.bg-cape-red{
+  background:
+    radial-gradient(ellipse at 40% 30%,rgba(255,80,60,.25),transparent 55%),
+    linear-gradient(145deg,#3a0810,#8b1020 40%,#4a0a12 100%);
+}
+.bg-cape-red::before{
+  content:"";position:absolute;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='40'%3E%3Cpath d='M0 20 Q15 5 30 20 T60 20' fill='none' stroke='%23ff6a6a' stroke-width='.8' opacity='.25'/%3E%3Cpath d='M0 28 Q15 13 30 28 T60 28' fill='none' stroke='%23a01020' stroke-width='1.2' opacity='.35'/%3E%3C/svg%3E");
+  background-size:60px 40px;opacity:.85;mix-blend-mode:overlay;
+}
+
+.bg-metropolis{
+  background:linear-gradient(180deg,#020814 0%,#0a1a3a 40%,#1a2848 70%,#0c1830 100%);
+}
+.bg-metropolis::before{
+  content:"";position:absolute;bottom:0;left:0;right:0;height:55%;
+  background:
+    linear-gradient(90deg,transparent 2%,#0a1428 2%,#0a1428 5%,transparent 5%,transparent 8%,#121e38 8%,#121e38 14%,transparent 14%,transparent 18%,#0e1830 18%,#0e1830 22%,transparent 22%,transparent 28%,#162040 28%,#162040 36%,transparent 36%,transparent 42%,#0c1628 42%,#0c1628 48%,transparent 48%,transparent 55%,#1a2448 55%,#1a2448 68%,transparent 68%,transparent 72%,#101c38 72%,#101c38 80%,transparent 80%,transparent 85%,#0a1428 85%,#0a1428 92%,transparent 92%),
+    linear-gradient(90deg,transparent 10%,#0e1a30 10%,#0e1a30 16%,transparent 16%,transparent 30%,#142038 30%,#142038 40%,transparent 40%,transparent 60%,#0c1830 60%,#0c1830 70%,transparent 70%);
+  background-size:100% 100%,100% 70%;
+  background-position:bottom,bottom;
+  background-repeat:no-repeat;
+  mask-image:linear-gradient(to top,black 40%,transparent);
+}
+.bg-metropolis::after{
+  content:"";position:absolute;inset:0;
+  background-image:
+    radial-gradient(1px 1px at 10% 15%,#fff,transparent),
+    radial-gradient(1px 1px at 30% 8%,#ffd,transparent),
+    radial-gradient(1.5px 1.5px at 55% 12%,#fff,transparent),
+    radial-gradient(1px 1px at 75% 20%,#eef,transparent),
+    radial-gradient(1px 1px at 88% 5%,#fff,transparent),
+    radial-gradient(2px 2px at 20% 25%,#ffc,transparent),
+    repeating-linear-gradient(90deg,transparent 0 18px,rgba(255,220,100,.15) 18px 19px),
+    repeating-linear-gradient(0deg,transparent 0 22px,rgba(255,200,80,.08) 22px 23px);
+  background-size:100% 100%,100% 100%,100% 100%,100% 100%,100% 100%,100% 100%,100% 40%,100% 40%;
+  background-position:0 0,0 0,0 0,0 0,0 0,0 0,0 60%,0 60%;
+  opacity:.7;pointer-events:none;
+}
+
+.bg-space{background:#000010;}
+.bg-space::before{
+  content:"";position:absolute;inset:-20%;
+  background:
+    radial-gradient(ellipse at 20% 30%,rgba(80,40,160,.35),transparent 40%),
+    radial-gradient(ellipse at 80% 70%,rgba(20,60,140,.3),transparent 45%),
+    radial-gradient(ellipse at 50% 50%,rgba(40,20,80,.2),transparent 60%);
+  animation:nebulaDrift 40s ease-in-out infinite alternate;
+}
+.bg-space .stars{
+  position:absolute;inset:0;
+  background-image:
+    radial-gradient(1px 1px at 5% 10%,#fff,transparent),
+    radial-gradient(1px 1px at 15% 40%,#aaf,transparent),
+    radial-gradient(1.5px 1.5px at 25% 20%,#fff,transparent),
+    radial-gradient(1px 1px at 35% 70%,#fff,transparent),
+    radial-gradient(2px 2px at 45% 15%,#ffe,transparent),
+    radial-gradient(1px 1px at 55% 55%,#aaf,transparent),
+    radial-gradient(1px 1px at 65% 30%,#fff,transparent),
+    radial-gradient(1.5px 1.5px at 75% 80%,#fff,transparent),
+    radial-gradient(1px 1px at 85% 45%,#ddf,transparent),
+    radial-gradient(1px 1px at 92% 12%,#fff,transparent),
+    radial-gradient(1px 1px at 8% 85%,#fff,transparent),
+    radial-gradient(2px 2px at 48% 88%,#ffd,transparent),
+    radial-gradient(1px 1px at 70% 5%,#fff,transparent),
+    radial-gradient(1px 1px at 38% 48%,#ccf,transparent);
+  animation:twinkle 4s ease-in-out infinite alternate;
+}
+@keyframes nebulaDrift{0%{transform:translate(0,0) scale(1)}100%{transform:translate(-3%,2%) scale(1.05)}}
+@keyframes twinkle{0%{opacity:.6}100%{opacity:1}}
+
+.bg-krypton{
+  background:
+    radial-gradient(ellipse at 50% 110%,#ff4400 0%,#aa1100 25%,#3a0508 55%,#0a0005 100%);
+}
+.bg-krypton::before{
+  content:"";position:absolute;bottom:-10%;left:50%;transform:translateX(-50%);
+  width:140vmax;height:70vmax;border-radius:50%;
+  background:radial-gradient(ellipse,rgba(255,100,20,.9) 0%,rgba(200,40,0,.5) 30%,transparent 65%);
+  filter:blur(2px);animation:sunPulse 8s ease-in-out infinite;
+}
+.bg-krypton::after{
+  content:"";position:absolute;inset:0;
+  background:radial-gradient(ellipse at 50% 80%,transparent 20%,rgba(40,0,0,.5) 100%);
+}
+@keyframes sunPulse{0%,100%{opacity:.85;transform:translateX(-50%) scale(1)}50%{opacity:1;transform:translateX(-50%) scale(1.04)}}
+
+.bg-fortress{
+  background:
+    linear-gradient(180deg,#e8f4ff 0%,#a8d0f0 35%,#6a9ec8 70%,#3a6088 100%);
+}
+.bg-fortress::before{
+  content:"";position:absolute;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cpolygon points='100,10 130,80 100,70 70,80' fill='%23ffffff' opacity='.35'/%3E%3Cpolygon points='40,60 70,140 40,120 20,140' fill='%23d0e8ff' opacity='.3'/%3E%3Cpolygon points='160,50 190,130 160,115 140,140' fill='%23ffffff' opacity='.25'/%3E%3Cpolygon points='100,90 150,190 100,170 50,190' fill='%23c0d8f0' opacity='.2'/%3E%3C/svg%3E");
+  background-size:200px 200px;opacity:.7;
+  animation:iceShimmer 12s linear infinite;
+}
+.bg-fortress::after{
+  content:"";position:absolute;inset:0;
+  background:radial-gradient(ellipse at 50% 30%,rgba(255,255,255,.4),transparent 50%);
+}
+@keyframes iceShimmer{0%{background-position:0 0}100%{background-position:200px 100px}}
+
+.bg-smallville{
+  background:
+    linear-gradient(180deg,#1a2848 0%,#c06030 35%,#e8a040 55%,#f0c060 70%,#5a8040 100%);
+}
+.bg-smallville::before{
+  content:"";position:absolute;bottom:18%;left:50%;transform:translateX(-50%);
+  width:18vmax;height:18vmax;border-radius:50%;
+  background:radial-gradient(circle,#fff8c0 0%,#ffaa30 40%,transparent 70%);
+  box-shadow:0 0 80px 40px rgba(255,160,40,.4);
+}
+.bg-smallville::after{
+  content:"";position:absolute;bottom:0;left:0;right:0;height:22%;
+  background:linear-gradient(180deg,transparent,#2a5020 30%,#1a380f);
+  box-shadow:inset 0 20px 40px rgba(80,120,40,.3);
+}
+
+/* ========== LAYOUT ========== */
+.app{
+  position:relative;z-index:1;
+  display:grid;
+  grid-template-columns:1fr minmax(280px,380px);
+  gap:1.5rem;
+  min-height:100vh;
+  padding:1.25rem 1.5rem 2rem;
+  align-items:start;
+}
+@media(max-width:900px){
+  .app{grid-template-columns:1fr;padding:1rem .75rem 2rem;}
+}
+.header{
+  grid-column:1/-1;
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem;
+  padding:.5rem 0 1rem;
+}
+.logo{
+  display:flex;align-items:center;gap:.75rem;
+}
+.logo svg{width:42px;height:36px;filter:drop-shadow(0 2px 6px rgba(200,20,40,.5));}
+.logo h1{
+  font-size:1.35rem;font-weight:800;letter-spacing:.04em;
+  background:linear-gradient(90deg,#ffd700,#fff,#ffd700);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  text-shadow:0 0 30px rgba(255,200,50,.3);
+}
+.logo .sub{font-size:.75rem;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;}
+.badge{
+  font-size:.7rem;padding:.35rem .7rem;border-radius:999px;
+  background:rgba(232,197,71,.15);border:1px solid rgba(232,197,71,.4);
+  color:var(--accent);letter-spacing:.08em;text-transform:uppercase;
+}
+
+/* ========== WATCH STAGE ========== */
+.watch-stage{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:1rem 0 2rem;min-height:520px;
+  perspective:900px;
+}
+.watch-assembly{
+  position:relative;
+  width:var(--watch-size);
+  transform-style:preserve-3d;
+  transition:transform .8s cubic-bezier(.2,.8,.2,1),filter .5s;
+  filter:drop-shadow(0 25px 40px rgba(0,0,0,.55));
+}
+.watch-assembly.flying{
+  animation:flyWatch 4s ease-in-out;
+}
+@keyframes flyWatch{
+  0%{transform:translateY(0) rotateX(0) scale(1)}
+  20%{transform:translateY(-40px) rotateX(12deg) scale(1.05)}
+  50%{transform:translateY(-70px) rotateX(8deg) rotateZ(-3deg) scale(1.08)}
+  80%{transform:translateY(-30px) rotateX(5deg) scale(1.03)}
+  100%{transform:translateY(0) rotateX(0) scale(1)}
+}
+.heat-beam{
+  position:absolute;top:42%;left:50%;width:8px;height:0;
+  transform:translateX(-50%);
+  background:linear-gradient(180deg,#fff,#ff2200,#aa0000);
+  border-radius:4px;
+  box-shadow:0 0 20px 8px rgba(255,40,0,.8),0 0 60px 20px rgba(255,0,0,.4);
+  opacity:0;pointer-events:none;z-index:20;
+}
+.heat-beam.active{
+  animation:heatBlast .9s ease-out forwards;
+}
+@keyframes heatBlast{
+  0%{opacity:0;height:0;top:42%}
+  20%{opacity:1;height:120px}
+  70%{opacity:1;height:280px;top:42%}
+  100%{opacity:0;height:320px;top:42%}
+}
+
+/* Strap */
+.strap{
+  width:48%;margin:0 auto;
+  position:relative;z-index:1;
+}
+.strap-top,.strap-bottom{
+  height:70px;
+  background:
+    linear-gradient(90deg,
+      color-mix(in srgb,var(--strap) 70%,#000) 0%,
+      var(--strap) 15%,
+      color-mix(in srgb,var(--strap) 80%,#fff) 50%,
+      var(--strap) 85%,
+      color-mix(in srgb,var(--strap) 70%,#000) 100%);
+  border-left:2px solid rgba(255,255,255,.08);
+  border-right:2px solid rgba(0,0,0,.3);
+  box-shadow:inset 0 0 20px rgba(0,0,0,.35);
+  position:relative;
+}
+.strap-top{
+  border-radius:12px 12px 0 0;
+  height:78px;
+  mask-image:linear-gradient(to bottom,transparent,black 30%);
+  -webkit-mask-image:linear-gradient(to bottom,transparent,black 30%);
+}
+.strap-bottom{
+  border-radius:0 0 12px 12px;
+  height:88px;
+  mask-image:linear-gradient(to top,transparent,black 35%);
+  -webkit-mask-image:linear-gradient(to top,transparent,black 35%);
+}
+.strap-top::before,.strap-bottom::before{
+  content:"";position:absolute;inset:8px 12%;
+  background:repeating-linear-gradient(180deg,
+    transparent 0 14px,
+    rgba(0,0,0,.25) 14px 15px,
+    rgba(255,255,255,.04) 15px 16px);
+  border-radius:4px;pointer-events:none;
+}
+.strap-holes{
+  position:absolute;left:50%;transform:translateX(-50%);
+  display:flex;flex-direction:column;gap:14px;top:20px;
+}
+.strap-holes span{
+  width:8px;height:8px;border-radius:50%;
+  background:radial-gradient(circle at 40% 40%,#222,#000);
+  box-shadow:inset 0 1px 2px #000,0 1px 0 rgba(255,255,255,.15);
+}
+
+/* Case */
+.case{
+  position:relative;z-index:2;
+  width:100%;aspect-ratio:1;
+  border-radius:50%;
+  background:
+    radial-gradient(circle at 30% 25%,#f4f6fa,#a8b0c0 45%,#6a7488 80%,#c8d0dc);
+  padding:6.5%;
+  box-shadow:
+    0 2px 0 rgba(255,255,255,.7) inset,
+    0 -3px 6px rgba(0,0,0,.35) inset,
+    0 8px 24px rgba(0,0,0,.4),
+    0 0 0 1px rgba(0,0,0,.2);
+}
+.bezel{
+  width:100%;height:100%;border-radius:50%;
+  background:
+    conic-gradient(from 0deg,
+      #4a5060,#c8d0dc,#5a6070,#d8dce4,#4a5060,#b8c0cc,#5a6070,#d0d6e0,#4a5060);
+  padding:5.5%;
+  box-shadow:
+    0 1px 2px rgba(255,255,255,.5) inset,
+    0 -2px 4px rgba(0,0,0,.4) inset;
+  position:relative;
+}
+.bezel-markers{
+  position:absolute;inset:3%;border-radius:50%;pointer-events:none;
+}
+.bezel-markers span{
+  position:absolute;left:50%;top:50%;width:2px;height:6%;
+  background:linear-gradient(#eee,#888);
+  transform-origin:50% 0;
+  margin-left:-1px;margin-top:0;
+  border-radius:1px;
+  box-shadow:0 0 1px rgba(0,0,0,.5);
+}
+.crown{
+  position:absolute;right:-7%;top:42%;
+  width:9%;height:16%;
+  border-radius:3px 6px 6px 3px;
+  background:linear-gradient(180deg,#e0e4ea,#8a90a0 40%,#c0c6d0 60%,#6a7080);
+  box-shadow:
+    -1px 0 2px rgba(0,0,0,.4),
+    1px 0 1px rgba(255,255,255,.4) inset,
+    0 2px 4px rgba(0,0,0,.3);
+  z-index:3;
+  cursor:pointer;transition:transform .15s;
+}
+.crown:active{transform:translateX(2px);}
+.crown::before{
+  content:"";position:absolute;inset:15% 20%;
+  background:repeating-linear-gradient(180deg,#aaa 0 2px,#666 2px 3px);
+  border-radius:2px;opacity:.6;
+}
+
+/* Dial / glass */
+.dial{
+  width:100%;height:100%;border-radius:50%;
+  position:relative;overflow:hidden;
+  background:#0a0e18;
+  box-shadow:
+    0 0 0 2px rgba(0,0,0,.5),
+    inset 0 0 30px rgba(0,0,0,.5);
+}
+.glass{
+  position:absolute;inset:0;border-radius:50%;z-index:10;pointer-events:none;
+  background:
+    linear-gradient(135deg,rgba(255,255,255,.28) 0%,rgba(255,255,255,.05) 28%,transparent 45%),
+    linear-gradient(320deg,rgba(255,255,255,.08) 0%,transparent 30%);
+  box-shadow:inset 0 0 20px rgba(255,255,255,.05);
+}
+.glass::after{
+  content:"";position:absolute;top:8%;left:12%;width:35%;height:18%;
+  border-radius:50%;
+  background:linear-gradient(180deg,rgba(255,255,255,.35),transparent);
+  filter:blur(2px);
+  animation:glint 6s ease-in-out infinite;
+}
+@keyframes glint{
+  0%,100%{opacity:.5;transform:translateX(0)}
+  50%{opacity:.85;transform:translateX(8px)}
+}
+
+/* Face content */
+.face{
+  position:absolute;inset:0;border-radius:50%;
+  display:none;flex-direction:column;align-items:center;justify-content:center;
+  overflow:hidden;
+}
+.face.active{display:flex;}
+
+/* Shared analog hands */
+.hands{position:absolute;inset:0;z-index:5;pointer-events:none;}
+.hand{
+  position:absolute;left:50%;bottom:50%;
+  transform-origin:50% 100%;
+  border-radius:2px;
+  filter:drop-shadow(0 1px 2px rgba(0,0,0,.6));
+  opacity:.92;
+}
+.hand-hour{
+  width:3.5%;height:28%;margin-left:-1.75%;
+  background:linear-gradient(180deg,#f0f4f8,#8890a0);
+  border-radius:2px 2px 1px 1px;
+}
+.hand-minute{
+  width:2.4%;height:38%;margin-left:-1.2%;
+  background:linear-gradient(180deg,#fff,#9aa4b4);
+}
+.hand-second{
+  width:1.2%;height:44%;margin-left:-.6%;
+  background:linear-gradient(180deg,#e82030,#a01020);
+  z-index:6;
+}
+.hand-second::after{
+  content:"";position:absolute;bottom:-8%;left:50%;transform:translateX(-50%);
+  width:250%;height:12%;border-radius:50%;background:#e82030;
+}
+.pivot{
+  position:absolute;left:50%;top:50%;width:8%;height:8%;
+  margin:-4% 0 0 -4%;border-radius:50%;z-index:7;
+  background:radial-gradient(circle at 35% 35%,#fff,#889,#333);
+  box-shadow:0 1px 3px rgba(0,0,0,.5);
+}
+
+/* ========== FACE STYLES ========== */
+/* Classic */
+.face-classic{background:radial-gradient(circle at 50% 45%,#1a2a4a,#0a1020 70%);}
+.face-classic .ticks{position:absolute;inset:0;}
+.face-classic .tick{
+  position:absolute;left:50%;top:50%;width:2px;height:4.5%;
+  background:#c8d0e0;transform-origin:50% 0;margin-left:-1px;
+  border-radius:1px;
+}
+.face-classic .tick.major{height:6%;width:2.5px;margin-left:-1.25px;background:var(--gold);}
+.face-classic .shield-wrap{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:48%;z-index:2;opacity:.92;
+  filter:drop-shadow(0 2px 4px rgba(0,0,0,.5));
+}
+.face-classic .date-win{
+  position:absolute;top:46%;right:12%;
+  background:#0a1020;border:1px solid #667;border-radius:3px;
+  padding:2px 6px;font-size:clamp(8px,2.2vw,11px);font-weight:700;
+  color:#e0e8f0;letter-spacing:.05em;z-index:4;
+  box-shadow:inset 0 1px 3px rgba(0,0,0,.6);
+}
+.face-classic .brand{
+  position:absolute;top:18%;left:50%;transform:translateX(-50%);
+  font-size:clamp(7px,1.8vw,10px);letter-spacing:.25em;color:var(--gold);
+  font-weight:600;opacity:.85;z-index:4;
+}
+
+/* Digital LED */
+.face-digital{
+  background:radial-gradient(circle,#1a0808,#050202);
+}
+.face-digital .led-shield{
+  position:absolute;top:12%;width:28%;opacity:.9;
+  filter:drop-shadow(0 0 8px rgba(255,40,40,.5));
+}
+.face-digital .led-time{
+  font-family:"Courier New",monospace;
+  font-size:clamp(22px,7vw,42px);font-weight:700;
+  color:#ff2030;
+  text-shadow:0 0 10px #ff2030,0 0 30px rgba(255,0,0,.5),0 0 2px #fff;
+  letter-spacing:.08em;
+  margin-top:8%;
+}
+.face-digital .led-date{
+  font-family:"Courier New",monospace;
+  font-size:clamp(10px,2.5vw,14px);color:#ff6060;
+  text-shadow:0 0 6px #ff4060;letter-spacing:.15em;margin-top:4%;
+}
+.face-digital .led-label{
+  position:absolute;bottom:14%;font-size:clamp(7px,1.6vw,9px);
+  color:#aa3030;letter-spacing:.3em;text-transform:uppercase;
+}
+
+/* Kryptonian Crystal */
+.face-crystal{
+  background:
+    radial-gradient(ellipse at 50% 30%,rgba(180,220,255,.25),transparent 50%),
+    linear-gradient(160deg,#0a1830,#102848 40%,#081828);
+}
+.face-crystal::before{
+  content:"";position:absolute;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cpolygon points='50,5 65,40 50,35 35,40' fill='%23a0d0ff' opacity='.15'/%3E%3Cpolygon points='20,45 35,85 20,75 10,90' fill='%2380c0ff' opacity='.12'/%3E%3Cpolygon points='75,40 95,80 75,70 60,85' fill='%23b0e0ff' opacity='.1'/%3E%3C/svg%3E");
+  background-size:100px 100px;opacity:.8;animation:iceShimmer 8s linear infinite;
+}
+.face-crystal .crystal-shield{
+  width:38%;filter:drop-shadow(0 0 12px rgba(100,180,255,.8));
+  animation:crystalPulse 3s ease-in-out infinite;
+}
+.face-crystal .crystal-time{
+  position:absolute;bottom:14%;z-index:6;
+  font-size:clamp(12px,3.2vw,18px);font-weight:300;
+  color:#c0e8ff;letter-spacing:.15em;
+  text-shadow:0 0 15px rgba(100,200,255,.8);
+}
+@keyframes crystalPulse{0%,100%{filter:drop-shadow(0 0 8px rgba(100,180,255,.6))}50%{filter:drop-shadow(0 0 18px rgba(140,220,255,1))}}
+
+/* Fortress */
+.face-fortress{
+  background:radial-gradient(circle at 50% 40%,#d8eef8,#6890b0 60%,#3a5870);
+}
+.face-fortress .fort-shield{
+  width:40%;filter:drop-shadow(0 2px 8px rgba(40,80,120,.5));
+}
+.face-fortress .fort-time{
+  position:absolute;bottom:16%;font-size:clamp(12px,3.2vw,18px);
+  font-weight:600;color:#1a3858;letter-spacing:.1em;
+}
+
+/* Heat Vision */
+.face-heat{
+  background:radial-gradient(circle at 50% 50%,#3a0808,#100202 70%);
+}
+.face-heat::before{
+  content:"";position:absolute;inset:0;
+  background:radial-gradient(circle at 50% 45%,rgba(255,40,0,.35),transparent 55%);
+  animation:heatGlow 2s ease-in-out infinite alternate;
+}
+.face-heat .heat-shield{
+  width:40%;filter:drop-shadow(0 0 16px rgba(255,40,0,.9));
+  animation:heatGlow 2s ease-in-out infinite alternate;
+}
+.face-heat .heat-time{
+  position:absolute;bottom:16%;z-index:6;
+  font-size:clamp(14px,4vw,22px);font-weight:700;
+  color:#ff6040;text-shadow:0 0 20px #ff2000;letter-spacing:.08em;
+}
+@keyframes heatGlow{0%{filter:drop-shadow(0 0 8px rgba(255,40,0,.5))}100%{filter:drop-shadow(0 0 22px rgba(255,60,0,1))}}
+
+/* Kryptonite */
+.face-kryptonite{
+  background:radial-gradient(circle at 50% 40%,#0a2a10,#031008 70%);
+}
+.face-kryptonite::before{
+  content:"";position:absolute;inset:0;
+  background:radial-gradient(circle at 50% 50%,rgba(40,255,80,.2),transparent 50%);
+  animation:kryptoGlow 2.5s ease-in-out infinite alternate;
+}
+.face-kryptonite .krypto-shield{
+  width:40%;filter:drop-shadow(0 0 14px rgba(40,255,80,.7));
+}
+.face-kryptonite .krypto-time{
+  position:absolute;bottom:16%;z-index:6;
+  font-size:clamp(14px,4vw,22px);font-weight:600;
+  color:#60ff80;text-shadow:0 0 16px #20ff40;letter-spacing:.08em;
+}
+@keyframes kryptoGlow{0%{opacity:.7}100%{opacity:1}}
+
+/* Minimalist Chrome */
+.face-chrome{background:#080808;}
+.face-chrome .chrome-shield{
+  width:48%;
+  filter:drop-shadow(0 4px 8px rgba(0,0,0,.8));
+}
+.face-chrome .chrome-time{
+  position:absolute;bottom:14%;
+  font-size:clamp(11px,2.8vw,15px);font-weight:300;
+  color:#a0a8b8;letter-spacing:.2em;
+}
+.face-chrome .chrome-ring{
+  position:absolute;inset:8%;border-radius:50%;
+  border:1px solid rgba(200,210,220,.15);
+}
+
+/* Daily Planet */
+.face-daily{
+  background:
+    repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.03) 2px 3px),
+    linear-gradient(180deg,#f5e8c8,#e8d4a8);
+}
+.face-daily .daily-masthead{
+  position:absolute;top:10%;left:50%;transform:translateX(-50%);
+  text-align:center;z-index:3;width:90%;
+}
+.face-daily .daily-masthead .paper{
+  font-family:Georgia,"Times New Roman",serif;
+  font-size:clamp(8px,2vw,11px);font-weight:700;
+  color:#1a1520;letter-spacing:.08em;text-transform:uppercase;
+  border-bottom:1.5px solid #1a1520;padding-bottom:2px;display:inline-block;
+}
+.face-daily .daily-masthead .tag{
+  font-family:Georgia,serif;font-size:clamp(6px,1.4vw,8px);
+  color:#5a4050;letter-spacing:.15em;margin-top:2px;
+}
+.face-daily .daily-shield{
+  width:36%;margin-top:4%;
+  filter:drop-shadow(0 2px 3px rgba(0,0,0,.3));
+}
+.face-daily .daily-time{
+  position:absolute;bottom:12%;
+  font-family:Georgia,serif;font-size:clamp(14px,3.5vw,20px);
+  font-weight:700;color:#1a1520;letter-spacing:.05em;
+}
+
+/* ========== CONTROL PANEL ========== */
+.panel{
+  background:linear-gradient(165deg,rgba(16,28,52,.92),rgba(8,14,28,.95));
+  border:1px solid var(--panel-border);
+  border-radius:16px;
+  padding:1.1rem 1.15rem 1.3rem;
+  box-shadow:0 12px 40px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.06);
+  backdrop-filter:blur(12px);
+  max-height:calc(100vh - 2rem);
+  overflow-y:auto;
+}
+.panel::-webkit-scrollbar{width:6px}
+.panel::-webkit-scrollbar-thumb{background:#2a4570;border-radius:3px}
+.panel h2{
+  font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--accent);margin-bottom:.6rem;font-weight:700;
+}
+.panel-section{margin-bottom:1.15rem;}
+.panel-section + .panel-section{
+  border-top:1px solid rgba(42,69,112,.5);padding-top:1rem;
+}
+
+.chip-grid{display:flex;flex-wrap:wrap;gap:.4rem;}
+.chip{
+  appearance:none;border:1px solid rgba(100,140,200,.35);
+  background:rgba(20,40,80,.5);color:var(--text);
+  font-size:.72rem;padding:.4rem .65rem;border-radius:8px;
+  cursor:pointer;transition:all .2s;font-weight:600;letter-spacing:.02em;
+}
+.chip:hover{border-color:var(--accent);background:rgba(40,60,100,.7);}
+.chip.active{
+  background:linear-gradient(135deg,rgba(200,30,50,.85),rgba(160,20,40,.9));
+  border-color:#ff6070;color:#fff;
+  box-shadow:0 0 12px rgba(255,40,60,.35);
+}
+.chip.bg-chip.active{
+  background:linear-gradient(135deg,rgba(40,80,200,.8),rgba(20,50,140,.9));
+  border-color:#60a0ff;box-shadow:0 0 12px rgba(60,120,255,.35);
+}
+
+.tabs{display:flex;flex-wrap:wrap;gap:.3rem;margin-bottom:.75rem;}
+.tab{
+  appearance:none;border:none;background:transparent;
+  color:var(--muted);font-size:.72rem;font-weight:700;
+  padding:.4rem .55rem;border-radius:6px;cursor:pointer;
+  letter-spacing:.04em;text-transform:uppercase;transition:all .2s;
+}
+.tab:hover{color:var(--text);background:rgba(255,255,255,.05);}
+.tab.active{color:var(--accent);background:rgba(232,197,71,.12);}
+.mode-pane{display:none;}
+.mode-pane.active{display:block;}
+
+.display-box{
+  background:rgba(0,0,0,.35);border:1px solid rgba(80,120,180,.3);
+  border-radius:10px;padding:.85rem;text-align:center;margin-bottom:.7rem;
+}
+.big-time{
+  font-variant-numeric:tabular-nums;
+  font-size:2rem;font-weight:700;letter-spacing:.04em;
+  color:#fff;text-shadow:0 0 20px rgba(100,160,255,.3);
+}
+.sub-info{font-size:.8rem;color:var(--muted);margin-top:.25rem;}
+.btn-row{display:flex;flex-wrap:wrap;gap:.4rem;justify-content:center;}
+.btn{
+  appearance:none;border:1px solid rgba(100,140,200,.4);
+  background:linear-gradient(180deg,rgba(40,70,130,.7),rgba(20,40,80,.8));
+  color:#fff;font-size:.75rem;font-weight:700;padding:.5rem .9rem;
+  border-radius:8px;cursor:pointer;transition:all .15s;letter-spacing:.03em;
+}
+.btn:hover{border-color:var(--accent);transform:translateY(-1px);}
+.btn:active{transform:translateY(0);}
+.btn.primary{background:linear-gradient(180deg,#c82030,#8a1020);border-color:#ff5060;}
+.btn.ghost{background:transparent;}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none;}
+
+.lap-list{
+  max-height:100px;overflow-y:auto;font-size:.75rem;
+  color:var(--muted);text-align:left;margin-top:.5rem;
+  font-variant-numeric:tabular-nums;
+}
+.lap-list div{padding:.2rem .3rem;border-bottom:1px solid rgba(255,255,255,.05);}
+
+.world-grid{display:grid;gap:.4rem;}
+.world-row{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:.45rem .6rem;background:rgba(0,0,0,.25);border-radius:8px;
+  font-size:.8rem;
+}
+.world-row .city{font-weight:600;color:var(--text);}
+.world-row .wtime{font-variant-numeric:tabular-nums;color:var(--accent);}
+
+.color-row{display:flex;gap:.4rem;flex-wrap:wrap;align-items:center;}
+.swatch{
+  width:28px;height:28px;border-radius:50%;border:2px solid rgba(255,255,255,.3);
+  cursor:pointer;transition:transform .15s;box-shadow:0 2px 6px rgba(0,0,0,.4);
+}
+.swatch:hover,.swatch.active{transform:scale(1.15);border-color:#fff;}
+
+.toggle{
+  display:inline-flex;align-items:center;gap:.5rem;
+  font-size:.8rem;color:var(--muted);cursor:pointer;user-select:none;
+}
+.toggle input{accent-color:var(--accent);width:16px;height:16px;}
+
+.alert-toast{
+  position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%) translateY(120%);
+  background:linear-gradient(135deg,#c82030,#8a1020);color:#fff;
+  padding:.75rem 1.5rem;border-radius:12px;font-weight:700;
+  box-shadow:0 8px 30px rgba(200,20,40,.5);z-index:100;
+  transition:transform .4s cubic-bezier(.2,.8,.2,1);letter-spacing:.05em;
+}
+.alert-toast.show{transform:translateX(-50%) translateY(0);}
+
+.footer-note{
+  font-size:.65rem;color:var(--muted);text-align:center;margin-top:.5rem;
+  opacity:.7;
+}
+
+input[type="number"],input[type="time"]{
+  background:rgba(0,0,0,.4);border:1px solid rgba(80,120,180,.4);
+  color:#fff;border-radius:6px;padding:.4rem .55rem;font-size:.85rem;
+  width:4.5rem;
+}
+input[type="time"]{width:auto;}
+label.inline{font-size:.75rem;color:var(--muted);margin-right:.3rem;}
+</style>
+</head>
+<body>
+<div id="bg-layer" class="bg-suit-blue"><div class="stars" style="display:none"></div></div>
+<div class="alert-toast" id="toast">Alert!</div>
+
+<div class="app">
+  <header class="header">
+    <div class="logo">
+      <svg viewBox="0 0 200 170" aria-hidden="true">
+        <path d="M42 4 H158 L196 48 L100 166 L4 48 Z" fill="#c8102e"/>
+        <path d="M46 11 H154 L187 49 L100 155 L13 49 Z" fill="#ffd21f"/>
+        <path fill="#c8102e" d="M46 18 L152 18 L176 46 L149 37 L88 37 C66 37 64 56 90 57 L142 61 C163 64 159 99 133 110 C112 118 86 118 62 102 C88 104 106 96 116 89 C127 81 122 76 106 75 L52 70 C20 66 18 30 46 18 Z"/>
+      </svg>
+      <div>
+        <h1>SUPERMAN WATCH</h1>
+        <div class="sub">Personal Edition · Nick</div>
+      </div>
+    </div>
+    <span class="badge">Offline · Local File Ready</span>
+  </header>
+
+  <main class="watch-stage">
+    <div class="watch-assembly" id="watch">
+      <div class="heat-beam" id="heatBeam"></div>
+      <div class="strap strap-top">
+        <div class="strap-holes"><span></span><span></span></div>
+      </div>
+      <div class="case">
+        <div class="crown" id="crown" title="Press crown"></div>
+        <div class="bezel">
+          <div class="bezel-markers" id="bezelMarkers"></div>
+          <div class="dial">
+            <!-- FACE: Classic Analog -->
+            <div class="face face-classic active" data-face="classic">
+              <div class="brand">KRYPTON</div>
+              <div class="ticks" id="classicTicks"></div>
+              <div class="shield-wrap">
+                <svg viewBox="0 0 200 170"><use href="#s-shield"/></svg>
+              </div>
+              <div class="date-win" id="classicDate">28</div>
+              <div class="hands">
+                <div class="hand hand-hour" id="hHour"></div>
+                <div class="hand hand-minute" id="hMinute"></div>
+                <div class="hand hand-second" id="hSecond"></div>
+                <div class="pivot"></div>
+              </div>
+            </div>
+            <!-- FACE: Digital LED -->
+            <div class="face face-digital" data-face="digital">
+              <svg class="led-shield" viewBox="0 0 200 170"><use href="#s-shield"/></svg>
+              <div class="led-time" id="ledTime">12:00:00</div>
+              <div class="led-date" id="ledDate">MON SEP 28</div>
+              <div class="led-label">Metropolis Time</div>
+            </div>
+            <!-- FACE: Kryptonian Crystal -->
+            <div class="face face-crystal" data-face="crystal">
+              <svg class="crystal-shield" viewBox="0 0 200 170"><use href="#s-shield-ice"/></svg>
+              <div class="crystal-time" id="crystalTime">12:00:00</div>
+              <div class="hands" style="opacity:.7">
+                <div class="hand hand-hour" id="cHour" style="background:linear-gradient(#cff,#6af)"></div>
+                <div class="hand hand-minute" id="cMinute" style="background:linear-gradient(#eef,#8cf)"></div>
+                <div class="hand hand-second" id="cSecond" style="background:linear-gradient(#fff,#4af)"></div>
+                <div class="pivot"></div>
+              </div>
+            </div>
+            <!-- FACE: Fortress -->
+            <div class="face face-fortress" data-face="fortress">
+              <svg class="fort-shield" viewBox="0 0 200 170"><use href="#s-shield-ice"/></svg>
+              <div class="fort-time" id="fortTime">12:00</div>
+              <div class="hands">
+                <div class="hand hand-hour" id="fHour" style="background:linear-gradient(#2a4868,#0a2038)"></div>
+                <div class="hand hand-minute" id="fMinute" style="background:linear-gradient(#3a5878,#1a3048)"></div>
+                <div class="hand hand-second" id="fSecond" style="background:linear-gradient(#c82030,#800)"></div>
+                <div class="pivot"></div>
+              </div>
+            </div>
+            <!-- FACE: Heat Vision -->
+            <div class="face face-heat" data-face="heat">
+              <svg class="heat-shield" viewBox="0 0 200 170"><use href="#s-shield-heat"/></svg>
+              <div class="heat-time" id="heatTime">12:00:00</div>
+            </div>
+            <!-- FACE: Kryptonite -->
+            <div class="face face-kryptonite" data-face="kryptonite">
+              <svg class="krypto-shield" viewBox="0 0 200 170"><use href="#s-shield-green"/></svg>
+              <div class="krypto-time" id="kryptoTime">12:00:00</div>
+            </div>
+            <!-- FACE: Chrome Minimal -->
+            <div class="face face-chrome" data-face="chrome">
+              <div class="chrome-ring"></div>
+              <svg class="chrome-shield" viewBox="0 0 200 170"><use href="#s-shield-chrome"/></svg>
+              <div class="chrome-time" id="chromeTime">12:00</div>
+              <div class="hands" style="opacity:.9">
+                <div class="hand hand-hour" id="chHour" style="background:linear-gradient(#eee,#888)"></div>
+                <div class="hand hand-minute" id="chMinute" style="background:linear-gradient(#fff,#aaa)"></div>
+                <div class="hand hand-second" id="chSecond"></div>
+                <div class="pivot"></div>
+              </div>
+            </div>
+            <!-- FACE: Daily Planet -->
+            <div class="face face-daily" data-face="daily">
+              <div class="daily-masthead">
+                <div class="paper">The Daily Planet</div>
+                <div class="tag">Metropolis · Truth</div>
+              </div>
+              <svg class="daily-shield" viewBox="0 0 200 170"><use href="#s-shield"/></svg>
+              <div class="daily-time" id="dailyTime">12:00</div>
+              <div class="hands" style="opacity:.55">
+                <div class="hand hand-hour" id="dHour" style="background:#1a1520"></div>
+                <div class="hand hand-minute" id="dMinute" style="background:#2a2530"></div>
+                <div class="hand hand-second" id="dSecond" style="background:#c82030"></div>
+                <div class="pivot" style="background:#1a1520"></div>
+              </div>
+            </div>
+            <div class="glass"></div>
+          </div>
+        </div>
+      </div>
+      <div class="strap strap-bottom">
+        <div class="strap-holes" style="top:30px"><span></span><span></span><span></span></div>
+      </div>
+    </div>
+  </main>
+
+  <aside class="panel">
+    <div class="panel-section">
+      <h2>Watch Faces</h2>
+      <div class="chip-grid" id="faceChips"></div>
+    </div>
+    <div class="panel-section">
+      <h2>Backgrounds</h2>
+      <div class="chip-grid" id="bgChips"></div>
+    </div>
+    <div class="panel-section">
+      <h2>Modes</h2>
+      <div class="tabs" id="modeTabs"></div>
+
+      <div class="mode-pane active" data-mode="clock">
+        <div class="display-box">
+          <div class="big-time" id="panelClock">12:00:00</div>
+          <div class="sub-info" id="panelDate">Monday, Sep 28, 2026</div>
+        </div>
+        <label class="toggle"><input type="checkbox" id="fmt24"> 24-hour format</label>
+      </div>
+
+      <div class="mode-pane" data-mode="stopwatch">
+        <div class="display-box">
+          <div class="big-time" id="swDisplay">00:00.00</div>
+          <div class="sub-info">Stopwatch</div>
+        </div>
+        <div class="btn-row">
+          <button class="btn primary" id="swStart">Start</button>
+          <button class="btn" id="swLap" disabled>Lap</button>
+          <button class="btn ghost" id="swReset">Reset</button>
+        </div>
+        <div class="lap-list" id="lapList"></div>
+      </div>
+
+      <div class="mode-pane" data-mode="timer">
+        <div class="display-box">
+          <div class="big-time" id="tmDisplay">05:00</div>
+          <div class="sub-info">Countdown</div>
+        </div>
+        <div class="btn-row" style="margin-bottom:.6rem">
+          <label class="inline">Min</label>
+          <input type="number" id="tmMin" min="0" max="99" value="5">
+          <label class="inline">Sec</label>
+          <input type="number" id="tmSec" min="0" max="59" value="0">
+        </div>
+        <div class="btn-row">
+          <button class="btn primary" id="tmStart">Start</button>
+          <button class="btn ghost" id="tmReset">Reset</button>
+        </div>
+      </div>
+
+      <div class="mode-pane" data-mode="alarm">
+        <div class="display-box">
+          <div class="big-time" id="alStatus">Off</div>
+          <div class="sub-info">Alarm</div>
+        </div>
+        <div class="btn-row" style="margin-bottom:.6rem">
+          <input type="time" id="alTime" value="07:00">
+        </div>
+        <div class="btn-row">
+          <button class="btn primary" id="alSet">Set Alarm</button>
+          <button class="btn ghost" id="alClear">Clear</button>
+          <button class="btn" id="alTest">Test Sound</button>
+        </div>
+      </div>
+
+      <div class="mode-pane" data-mode="world">
+        <div class="world-grid" id="worldGrid"></div>
+      </div>
+
+      <div class="mode-pane" data-mode="extras">
+        <div class="btn-row" style="margin-bottom:.8rem">
+          <button class="btn primary" id="btnHeat">Heat Vision</button>
+          <button class="btn" id="btnFly">Fly</button>
+        </div>
+        <h2 style="margin-top:.5rem">Strap Color</h2>
+        <div class="color-row" id="strapColors"></div>
+      </div>
+    </div>
+    <p class="footer-note">Fan project · Original SVG art · Settings saved locally</p>
+  </aside>
+</div>
+
+<!-- SVG symbol defs -->
+<svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">
+  <defs>
+    <linearGradient id="goldGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffe66a"/>
+      <stop offset="50%" stop-color="#ffd21f"/>
+      <stop offset="100%" stop-color="#c9a010"/>
+    </linearGradient>
+    <linearGradient id="redGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#e02040"/>
+      <stop offset="100%" stop-color="#8a1020"/>
+    </linearGradient>
+    <linearGradient id="iceGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#e8f8ff"/>
+      <stop offset="50%" stop-color="#80c0f0"/>
+      <stop offset="100%" stop-color="#4080c0"/>
+    </linearGradient>
+    <linearGradient id="heatGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ff8040"/>
+      <stop offset="50%" stop-color="#ff2000"/>
+      <stop offset="100%" stop-color="#880000"/>
+    </linearGradient>
+    <linearGradient id="greenGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#80ff90"/>
+      <stop offset="50%" stop-color="#20d040"/>
+      <stop offset="100%" stop-color="#086018"/>
+    </linearGradient>
+    <linearGradient id="chromeGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="30%" stop-color="#c8d0dc"/>
+      <stop offset="60%" stop-color="#8890a0"/>
+      <stop offset="100%" stop-color="#e8ecf2"/>
+    </linearGradient>
+
+    <!-- Classic red/yellow diamond S -->
+    <g id="s-shield">
+      <path d="M42 4 H158 L196 48 L100 166 L4 48 Z" fill="url(#redGrad)"/>
+      <path d="M46 11 H154 L187 49 L100 155 L13 49 Z" fill="url(#goldGrad)"/>
+      <path fill="url(#redGrad)" d="M46 18 L152 18 L176 46 L149 37 L88 37 C66 37 64 56 90 57 L142 61 C163 64 159 99 133 110 C112 118 86 118 62 102 C88 104 106 96 116 89 C127 81 122 76 106 75 L52 70 C20 66 18 30 46 18 Z"/>
+    </g>
+    <g id="s-shield-ice">
+      <path d="M42 4 H158 L196 48 L100 166 L4 48 Z" fill="#2a6088"/>
+      <path d="M46 11 H154 L187 49 L100 155 L13 49 Z" fill="url(#iceGrad)"/>
+      <path fill="#1a4068" d="M46 18 L152 18 L176 46 L149 37 L88 37 C66 37 64 56 90 57 L142 61 C163 64 159 99 133 110 C112 118 86 118 62 102 C88 104 106 96 116 89 C127 81 122 76 106 75 L52 70 C20 66 18 30 46 18 Z"/>
+    </g>
+    <g id="s-shield-heat">
+      <path d="M42 4 H158 L196 48 L100 166 L4 48 Z" fill="#4a0800"/>
+      <path d="M46 11 H154 L187 49 L100 155 L13 49 Z" fill="url(#heatGrad)"/>
+      <path fill="#200000" d="M46 18 L152 18 L176 46 L149 37 L88 37 C66 37 64 56 90 57 L142 61 C163 64 159 99 133 110 C112 118 86 118 62 102 C88 104 106 96 116 89 C127 81 122 76 106 75 L52 70 C20 66 18 30 46 18 Z"/>
+    </g>
+    <g id="s-shield-green">
+      <path d="M42 4 H158 L196 48 L100 166 L4 48 Z" fill="#0a3010"/>
+      <path d="M46 11 H154 L187 49 L100 155 L13 49 Z" fill="url(#greenGrad)"/>
+      <path fill="#042008" d="M46 18 L152 18 L176 46 L149 37 L88 37 C66 37 64 56 90 57 L142 61 C163 64 159 99 133 110 C112 118 86 118 62 102 C88 104 106 96 116 89 C127 81 122 76 106 75 L52 70 C20 66 18 30 46 18 Z"/>
+    </g>
+    <g id="s-shield-chrome">
+      <path d="M42 4 H158 L196 48 L100 166 L4 48 Z" fill="#2a3038"/>
+      <path d="M46 11 H154 L187 49 L100 155 L13 49 Z" fill="url(#chromeGrad)"/>
+      <path fill="#1a1e24" d="M46 18 L152 18 L176 46 L149 37 L88 37 C66 37 64 56 90 57 L142 61 C163 64 159 99 133 110 C112 118 86 118 62 102 C88 104 106 96 116 89 C127 81 122 76 106 75 L52 70 C20 66 18 30 46 18 Z"/>
+    </g>
+  </defs>
+</svg>
+
+<script>
+(function(){
+'use strict';
+
+const FACES = [
+  {id:'classic', label:'Classic Analog'},
+  {id:'digital', label:'Digital LED'},
+  {id:'crystal', label:'Kryptonian Crystal'},
+  {id:'fortress', label:'Fortress of Solitude'},
+  {id:'heat', label:'Heat Vision'},
+  {id:'kryptonite', label:'Kryptonite'},
+  {id:'chrome', label:'Chrome Minimal'},
+  {id:'daily', label:'Daily Planet'}
+];
+const BACKGROUNDS = [
+  {id:'suit-blue', label:'Suit Blue', cls:'bg-suit-blue'},
+  {id:'cape-red', label:'Cape Red', cls:'bg-cape-red'},
+  {id:'metropolis', label:'Metropolis Night', cls:'bg-metropolis'},
+  {id:'space', label:'Outer Space', cls:'bg-space'},
+  {id:'krypton', label:'Krypton Red Sun', cls:'bg-krypton'},
+  {id:'fortress', label:'Fortress Ice', cls:'bg-fortress'},
+  {id:'smallville', label:'Smallville Sunset', cls:'bg-smallville'}
+];
+const MODES = [
+  {id:'clock', label:'Clock'},
+  {id:'stopwatch', label:'Stopwatch'},
+  {id:'timer', label:'Timer'},
+  {id:'alarm', label:'Alarm'},
+  {id:'world', label:'World'},
+  {id:'extras', label:'Extras'}
+];
+const WORLD_CITIES = [
+  {name:'Metropolis', tz:'America/New_York'},
+  {name:'Chicago', tz:'America/Chicago'},
+  {name:'London', tz:'Europe/London'},
+  {name:'Tokyo', tz:'Asia/Tokyo'},
+  {name:'Smallville', tz:'America/Chicago'},
+  {name:'Sydney', tz:'Australia/Sydney'}
+];
+const STRAP_COLORS = [
+  {c:'#1a2a55', name:'Suit Blue'},
+  {c:'#8b1020', name:'Cape Red'},
+  {c:'#1a1a1a', name:'Black'},
+  {c:'#3a2a18', name:'Brown'},
+  {c:'#2a4030', name:'Green'},
+  {c:'#c8d0dc', name:'Silver'}
+];
+
+const $ = (s,el=document)=>el.querySelector(s);
+const $$ = (s,el=document)=>[...el.querySelectorAll(s)];
+
+const store = {
+  load(){
+    try{return JSON.parse(localStorage.getItem('supermanWatch')||'{}');}catch(e){return{};}
+  },
+  save(data){
+    localStorage.setItem('supermanWatch', JSON.stringify(data));
+  },
+  get(k,d){const s=this.load();return s[k]!==undefined?s[k]:d;},
+  set(k,v){const s=this.load();s[k]=v;this.save(s);}
+};
+
+let fmt24 = store.get('fmt24', false);
+let currentFace = store.get('face', 'classic');
+let currentBg = store.get('bg', 'suit-blue');
+let strapColor = store.get('strap', STRAP_COLORS[0].c);
+let alarmTime = store.get('alarm', null);
+let alarmFired = false;
+
+/* --- Build UI chips --- */
+function buildChips(){
+  const fc = $('#faceChips');
+  FACES.forEach(f=>{
+    const b=document.createElement('button');
+    b.className='chip'+(f.id===currentFace?' active':'');
+    b.textContent=f.label;
+    b.dataset.face=f.id;
+    b.addEventListener('click',()=>setFace(f.id));
+    fc.appendChild(b);
+  });
+  const bc=$('#bgChips');
+  BACKGROUNDS.forEach(bg=>{
+    const b=document.createElement('button');
+    b.className='chip bg-chip'+(bg.id===currentBg?' active':'');
+    b.textContent=bg.label;
+    b.dataset.bg=bg.id;
+    b.addEventListener('click',()=>setBg(bg.id));
+    bc.appendChild(b);
+  });
+  const tabs=$('#modeTabs');
+  MODES.forEach((m,i)=>{
+    const b=document.createElement('button');
+    b.className='tab'+(i===0?' active':'');
+    b.textContent=m.label;
+    b.dataset.mode=m.id;
+    b.addEventListener('click',()=>setMode(m.id));
+    tabs.appendChild(b);
+  });
+  const sc=$('#strapColors');
+  STRAP_COLORS.forEach(s=>{
+    const sw=document.createElement('button');
+    sw.className='swatch'+(s.c===strapColor?' active':'');
+    sw.style.background=s.c;
+    sw.title=s.name;
+    sw.addEventListener('click',()=>{
+      strapColor=s.c;
+      document.documentElement.style.setProperty('--strap',s.c);
+      store.set('strap',s.c);
+      $$('.swatch').forEach(x=>x.classList.remove('active'));
+      sw.classList.add('active');
+    });
+    sc.appendChild(sw);
+  });
+  const wg=$('#worldGrid');
+  WORLD_CITIES.forEach(c=>{
+    const row=document.createElement('div');
+    row.className='world-row';
+    row.innerHTML=`<span class="city">${c.name}</span><span class="wtime" data-tz="${c.tz}">--:--</span>`;
+    wg.appendChild(row);
+  });
+}
+
+function setFace(id){
+  currentFace=id;
+  store.set('face',id);
+  $$('.face').forEach(f=>f.classList.toggle('active',f.dataset.face===id));
+  $$('#faceChips .chip').forEach(c=>c.classList.toggle('active',c.dataset.face===id));
+}
+function setBg(id){
+  currentBg=id;
+  store.set('bg',id);
+  const bg=BACKGROUNDS.find(b=>b.id===id);
+  const layer=$('#bg-layer');
+  layer.className=bg.cls;
+  const stars=layer.querySelector('.stars');
+  if(stars) stars.style.display = id==='space' ? 'block' : 'none';
+  $$('#bgChips .chip').forEach(c=>c.classList.toggle('active',c.dataset.bg===id));
+}
+function setMode(id){
+  $$('#modeTabs .tab').forEach(t=>t.classList.toggle('active',t.dataset.mode===id));
+  $$('.mode-pane').forEach(p=>p.classList.toggle('active',p.dataset.mode===id));
+}
+
+/* --- Bezel & ticks --- */
+function buildMarkers(){
+  const bm=$('#bezelMarkers');
+  for(let i=0;i<60;i++){
+    if(i%5!==0) continue;
+    const s=document.createElement('span');
+    const ang=i*6;
+    s.style.transform=`rotate(${ang}deg) translateY(-48%)`;
+    bm.appendChild(s);
+  }
+  const ct=$('#classicTicks');
+  for(let i=0;i<60;i++){
+    const t=document.createElement('div');
+    t.className='tick'+(i%5===0?' major':'');
+    t.style.transform=`rotate(${i*6}deg) translateY(-46%)`;
+    ct.appendChild(t);
+  }
+}
+
+/* --- Clock --- */
+function pad(n,l=2){return String(n).padStart(l,'0');}
+
+function formatTime(d, withSec=true){
+  let h=d.getHours(), m=d.getMinutes(), s=d.getSeconds();
+  if(!fmt24){
+    const ap=h>=12?'PM':'AM';
+    h=h%12||12;
+    return withSec ? `${h}:${pad(m)}:${pad(s)} ${ap}` : `${h}:${pad(m)} ${ap}`;
+  }
+  return withSec ? `${pad(h)}:${pad(m)}:${pad(s)}` : `${pad(h)}:${pad(m)}`;
+}
+
+function setHand(el, deg){
+  if(el) el.style.transform=`rotate(${deg}deg)`;
+}
+
+function updateClock(){
+  const now=new Date();
+  const ms=now.getMilliseconds();
+  const s=now.getSeconds()+ms/1000;
+  const m=now.getMinutes()+s/60;
+  const h=(now.getHours()%12)+m/60;
+  const sDeg=s*6, mDeg=m*6, hDeg=h*30;
+
+  ['h','c','f','ch','d'].forEach(prefix=>{
+    setHand($( `#${prefix}Hour`), hDeg);
+    setHand($( `#${prefix}Minute`), mDeg);
+    setHand($( `#${prefix}Second`), sDeg);
+  });
+
+  const timeFull=formatTime(now,true);
+  const timeShort=formatTime(now,false);
+  const days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const monthsFull=['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+  $('#panelClock').textContent=timeFull;
+  $('#panelDate').textContent=`${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
+  $('#classicDate').textContent=pad(now.getDate());
+  $('#ledTime').textContent=fmt24?`${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`:`${pad(now.getHours()%12||12)}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+  $('#ledDate').textContent=`${days[now.getDay()].slice(0,3).toUpperCase()} ${months[now.getMonth()].toUpperCase()} ${now.getDate()}`;
+  $('#crystalTime').textContent=timeFull;
+  $('#fortTime').textContent=timeShort;
+  $('#heatTime').textContent=timeFull;
+  $('#kryptoTime').textContent=timeFull;
+  $('#chromeTime').textContent=timeShort;
+  $('#dailyTime').textContent=timeShort;
+
+  // World times
+  $$('#worldGrid .wtime').forEach(el=>{
+    try{
+      const opts={timeZone:el.dataset.tz,hour:'2-digit',minute:'2-digit',hour12:!fmt24};
+      el.textContent=new Intl.DateTimeFormat('en-US',opts).format(now);
+    }catch(e){el.textContent='--:--';}
+  });
+
+  // Alarm check
+  if(alarmTime){
+    const [ah,am]=alarmTime.split(':').map(Number);
+    if(now.getHours()===ah && now.getMinutes()===am && now.getSeconds()<2){
+      if(!alarmFired){alarmFired=true; triggerAlarm();}
+    } else if(now.getMinutes()!==am){alarmFired=false;}
+  }
+}
+
+/* --- Stopwatch --- */
+let swRunning=false, swStartTs=0, swElapsed=0, swRaf=null, laps=[];
+function swRender(ms){
+  const cs=Math.floor(ms/10)%100;
+  const s=Math.floor(ms/1000)%60;
+  const m=Math.floor(ms/60000);
+  $('#swDisplay').textContent=`${pad(m)}:${pad(s)}.${pad(cs)}`;
+}
+function swTick(){
+  const now=performance.now();
+  swRender(swElapsed+(now-swStartTs));
+  swRaf=requestAnimationFrame(swTick);
+}
+$('#swStart').addEventListener('click',()=>{
+  if(!swRunning){
+    swRunning=true; swStartTs=performance.now();
+    $('#swStart').textContent='Pause';
+    $('#swLap').disabled=false;
+    swRaf=requestAnimationFrame(swTick);
+  } else {
+    swRunning=false;
+    swElapsed+=performance.now()-swStartTs;
+    cancelAnimationFrame(swRaf);
+    $('#swStart').textContent='Start';
+    $('#swLap').disabled=true;
+  }
+});
+$('#swLap').addEventListener('click',()=>{
+  if(!swRunning) return;
+  const t=swElapsed+(performance.now()-swStartTs);
+  laps.unshift(t);
+  const list=$('#lapList');
+  list.innerHTML=laps.map((l,i)=>{
+    const cs=Math.floor(l/10)%100,s=Math.floor(l/1000)%60,m=Math.floor(l/60000);
+    return `<div>Lap ${laps.length-i} — ${pad(m)}:${pad(s)}.${pad(cs)}</div>`;
+  }).join('');
+});
+$('#swReset').addEventListener('click',()=>{
+  swRunning=false; cancelAnimationFrame(swRaf);
+  swElapsed=0; laps=[];
+  $('#swStart').textContent='Start';
+  $('#swLap').disabled=true;
+  $('#lapList').innerHTML='';
+  swRender(0);
+});
+
+/* --- Timer --- */
+let tmLeft=300, tmRunning=false, tmInterval=null;
+function tmRender(){
+  const m=Math.floor(tmLeft/60), s=tmLeft%60;
+  $('#tmDisplay').textContent=`${pad(m)}:${pad(s)}`;
+}
+function tmSyncInputs(){
+  const mi=+$('#tmMin').value||0, se=+$('#tmSec').value||0;
+  tmLeft=mi*60+se;
+  tmRender();
+}
+$('#tmMin').addEventListener('change',()=>{if(!tmRunning)tmSyncInputs();});
+$('#tmSec').addEventListener('change',()=>{if(!tmRunning)tmSyncInputs();});
+$('#tmStart').addEventListener('click',()=>{
+  if(!tmRunning){
+    if(tmLeft<=0) tmSyncInputs();
+    if(tmLeft<=0) return;
+    tmRunning=true;
+    $('#tmStart').textContent='Pause';
+    tmInterval=setInterval(()=>{
+      tmLeft--;
+      tmRender();
+      if(tmLeft<=0){
+        clearInterval(tmInterval); tmRunning=false;
+        $('#tmStart').textContent='Start';
+        showToast('TIMER COMPLETE');
+        playAlertSound();
+      }
+    },1000);
+  } else {
+    tmRunning=false; clearInterval(tmInterval);
+    $('#tmStart').textContent='Start';
+  }
+});
+$('#tmReset').addEventListener('click',()=>{
+  tmRunning=false; clearInterval(tmInterval);
+  $('#tmStart').textContent='Start';
+  tmSyncInputs();
+});
+
+/* --- Alarm & Audio --- */
+let audioCtx=null;
+function ensureAudio(){
+  if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+  if(audioCtx.state==='suspended') audioCtx.resume();
+  return audioCtx;
+}
+function playAlertSound(){
+  try{
+    const ctx=ensureAudio();
+    const now=ctx.currentTime;
+    for(let i=0;i<4;i++){
+      const o=ctx.createOscillator();
+      const g=ctx.createGain();
+      o.type='square';
+      o.frequency.value=i%2===0?880:1174.7;
+      g.gain.setValueAtTime(0, now+i*0.28);
+      g.gain.linearRampToValueAtTime(0.15, now+i*0.28+0.02);
+      g.gain.exponentialRampToValueAtTime(0.001, now+i*0.28+0.25);
+      o.connect(g); g.connect(ctx.destination);
+      o.start(now+i*0.28); o.stop(now+i*0.28+0.26);
+    }
+  }catch(e){console.warn('Audio failed',e);}
+}
+function playHeatSound(){
+  try{
+    const ctx=ensureAudio();
+    const now=ctx.currentTime;
+    const o=ctx.createOscillator();
+    const g=ctx.createGain();
+    o.type='sawtooth';
+    o.frequency.setValueAtTime(120,now);
+    o.frequency.exponentialRampToValueAtTime(60,now+0.8);
+    g.gain.setValueAtTime(0.12,now);
+    g.gain.exponentialRampToValueAtTime(0.001,now+0.85);
+    o.connect(g); g.connect(ctx.destination);
+    o.start(now); o.stop(now+0.9);
+  }catch(e){}
+}
+function showToast(msg){
+  const t=$('#toast');
+  t.textContent=msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+function triggerAlarm(){
+  showToast('ALARM — UP, UP AND AWAY!');
+  playAlertSound();
+  setTimeout(playAlertSound,1200);
+}
+function updateAlarmUI(){
+  if(alarmTime){
+    $('#alStatus').textContent=alarmTime;
+    $('#alStatus').nextElementSibling.textContent='Armed';
+  } else {
+    $('#alStatus').textContent='Off';
+    $('#alStatus').nextElementSibling.textContent='Alarm';
+  }
+}
+$('#alSet').addEventListener('click',()=>{
+  alarmTime=$('#alTime').value;
+  store.set('alarm',alarmTime);
+  alarmFired=false;
+  updateAlarmUI();
+  showToast('Alarm set for '+alarmTime);
+});
+$('#alClear').addEventListener('click',()=>{
+  alarmTime=null; store.set('alarm',null);
+  updateAlarmUI();
+});
+$('#alTest').addEventListener('click',()=>playAlertSound());
+
+/* --- Extras --- */
+$('#btnHeat').addEventListener('click',()=>{
+  const beam=$('#heatBeam');
+  beam.classList.remove('active');
+  void beam.offsetWidth;
+  beam.classList.add('active');
+  playHeatSound();
+  // Brief face flash
+  const dial=$('.dial');
+  dial.style.boxShadow='0 0 40px 10px rgba(255,40,0,.6), inset 0 0 30px rgba(0,0,0,.5)';
+  setTimeout(()=>{dial.style.boxShadow='';},900);
+});
+$('#btnFly').addEventListener('click',()=>{
+  const w=$('#watch');
+  w.classList.remove('flying');
+  void w.offsetWidth;
+  w.classList.add('flying');
+});
+$('#crown').addEventListener('click',()=>{
+  // Cycle faces with crown
+  const idx=FACES.findIndex(f=>f.id===currentFace);
+  setFace(FACES[(idx+1)%FACES.length].id);
+});
+
+$('#fmt24').checked=fmt24;
+$('#fmt24').addEventListener('change',e=>{
+  fmt24=e.target.checked;
+  store.set('fmt24',fmt24);
+  updateClock();
+});
+
+/* --- Init --- */
+buildChips();
+buildMarkers();
+document.documentElement.style.setProperty('--strap', strapColor);
+setFace(currentFace);
+setBg(currentBg);
+updateAlarmUI();
+if(alarmTime) $('#alTime').value=alarmTime;
+tmSyncInputs();
+
+function loop(){
+  updateClock();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+})();
+</script>
+</body>
+</html>
