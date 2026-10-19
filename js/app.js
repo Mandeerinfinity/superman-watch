@@ -1,4 +1,4 @@
-/* Nick's Superman Watch v2 — application core */
+/* Nick's Superman Watch v3: application core (single rAF loop, quality governor, lazy 3D hologram) */
 (function (SM) {
   'use strict';
   const { $, $$, f, pad, clamp, store } = SM;
@@ -52,7 +52,8 @@
     finish: store.get('finish', 'auto'), fmt24: store.get('fmt24', false), motion: store.get('motion', 'mech'), tickMode: store.get('tickMode', 'ticktock'),
     intro: store.get('intro', true), world: store.get('world', 'London'), loc: store.get('loc', { name: 'Chicago', lat: 41.88, lon: -87.63 }),
     bezel: store.get('bezel', 0), alarms: store.get('alarms', [{ id: 'a1', time: '07:00', label: 'Save the world', days: [1, 2, 3, 4, 5], on: false }]),
-    focusCount: store.get('focusCount', { date: '', n: 0 }), speedOffset: 0
+    focusCount: store.get('focusCount', { date: '', n: 0 }), speedOffset: 0,
+    tourbillon: store.get('tourbillon', false), holoVariant: store.get('holoVariant', 'cyan'), custom: store.get('custom', null)
   };
   const chrono = { running: false, start: 0, acc: 0, splits: [], hold: null, holdUntil: 0 };
   const timer = { dur: store.get('timerDur', 300000), left: store.get('timerDur', 300000), endAt: 0, running: false };
@@ -72,7 +73,7 @@
   };
 
   /* ---------------- watch DOM ---------------- */
-  const LAYERS = ['shadow', 'strap', 'case', 'dial', 'move', 'lume', 'hands', 'frost', 'glass', 'hit'];
+  const LAYERS = ['shadow', 'strap', 'case', 'dial', 'tourb', 'move', 'lume', 'hands', 'frost', 'glass', 'hit'];
   function buildWatch() {
     const w = app.el.watch = $('#watch'); app.el.rig = $('#rig'); app.el.stage = $('#stage');
     w.innerHTML = LAYERS.map(l => l === 'dial' || l === 'shadow' ? `<div class="ly ly-${l}"></div>` : l === 'frost' ? `<canvas class="ly frost"></canvas>` : `<svg class="ly ly-${l}" viewBox="0 0 600 800" aria-hidden="true"></svg>`).join('');
@@ -96,7 +97,8 @@
   function buildDial() {
     const face = app.face, d = SM.dialMarkup(face);
     app.subs = d.subs;
-    app.el.dial.innerHTML = `<svg class="dial-svg" viewBox="0 0 600 800">${d.markup}</svg>${face.canvas ? '<canvas class="solar" width="360" height="360"></canvas>' : ''}${d.overlay ? `<svg class="dial-over" viewBox="0 0 600 800">${d.overlay}</svg>` : ''}`;
+    const anim = (d.anim || []).map(a => `<div class="dial-anim ${a.cls || ''}" style="animation-duration:${a.dur || 30}s"><svg viewBox="0 0 600 800">${a.markup}</svg></div>`).join('');
+    app.el.dial.innerHTML = `<svg class="dial-svg" viewBox="0 0 600 800">${d.markup}</svg>${face.canvas ? '<canvas class="solar" width="360" height="360"></canvas>' : ''}${anim}${d.overlay ? `<svg class="dial-over" viewBox="0 0 600 800">${d.overlay}</svg>` : ''}`;
     app.el.solar = app.el.dial.querySelector('canvas.solar');
     app.el.hands.innerHTML = SM.handsMarkup(face, d.subs);
     const h = app.el.hands, q = id => h.querySelector('#' + id);
@@ -110,7 +112,31 @@
     app.el.lume.innerHTML = ''; app.lumeBuilt = false;
     app.lastSecond = -1; app.lastMinute = -1;
     document.documentElement.style.setProperty('--lume', face.lume || '#9dffb0');
+    if (SM.cx) SM.cx.bind(app.el.dial);
+    app.hasEcg = !!app.el.dial.querySelector('[data-ecg]');
+    app.dialDate = new Date().getDate();
+    buildTourbillon();
   }
+  function buildTourbillon() {
+    const on = st.tourbillon || app.face.tourbillon;
+    app.el.tourb.innerHTML = on ? SM.tourbillonMarkup(finishKey()) : '';
+    app.el.tourb._tb = null; app.tbOn = on;
+    app.el.watch.classList.toggle('has-tourb', !!on);
+  }
+  app.setTourbillon = function (on, silent) {
+    st.tourbillon = on === undefined ? !st.tourbillon : !!on; store.set('tourbillon', st.tourbillon); buildTourbillon();
+    if (!silent) { SM.toast(st.tourbillon ? 'Tourbillon engaged: 1 rpm cage, 4 Hz balance' : 'Tourbillon off'); A.crown(); SM.haptic(SM.HAPTIC.crown); }
+    SM.emit('tourbillon', st.tourbillon);
+  };
+  app.setCustom = function (cfg, silent) {
+    st.custom = Object.assign({}, SM.CUSTOM_DEFAULT, cfg || {}); store.set('custom', st.custom);
+    SM.faceById('custom').configure(st.custom);
+    if (!silent && st.face === 'custom') setFace('custom', { noSweep: true, noGhost: true });
+    SM.emit('custom', st.custom);
+  };
+  /* extra solar charge earned in the Solar Recharge game (today only) */
+  app.solarBoost = function () { const b = store.get('solarBoost', null); return b && b.date === todayKey(new Date()) ? b.v : 0; };
+  app.addSolarBoost = function (v) { const k = todayKey(new Date()), b = store.get('solarBoost', null), cur = b && b.date === k ? b.v : 0; store.set('solarBoost', { date: k, v: Math.min(100, cur + v) }); minuteWork(new Date()); };
   app.buildLume = function () {
     if (app.lumeBuilt) return; app.lumeBuilt = true;
     const root = app.el.lume, rm = root.getScreenCTM(); if (!rm) return;
@@ -128,7 +154,7 @@
   let sweep = null;
   function setFace(id, opts = {}) {
     const face = SM.faceById(id); const first = !app.face;
-    if (!first && app.el.dial.innerHTML) {
+    if (!first && app.el.dial.innerHTML && !opts.noGhost) {
       const ghost = document.createElement('div'); ghost.className = 'ly ly-dial ghost';
       ghost.innerHTML = SM.scopeIds(app.el.dial.innerHTML + `<svg class="dial-svg" viewBox="0 0 600 800">${app.el.hands.innerHTML}</svg>`, 'g' + Date.now().toString(36));
       const oc = app.el.solar; if (oc) { const nc = ghost.querySelector('canvas.solar'); if (nc) nc.getContext('2d').drawImage(oc, 0, 0); }
@@ -142,6 +168,8 @@
     $('#cap-name').textContent = face.name; $('#cap-desc').textContent = face.desc;
     if (!first && !opts.noSweep) sweep = { t0: performance.now(), dur: 900 };
     if (app.lumeOn) requestAnimationFrame(() => app.buildLume());
+    if (face.holo) app.openHolo('face');
+    else if (app.holo && app.holo.state.mode === 'face') app.closeHolo();
     SM.emit('face', face);
   }
   app.setFace = setFace;
@@ -171,6 +199,7 @@
   app.turnBezel = function (steps) {
     st.bezel = ((st.bezel + steps * 6) % 360 + 360) % 360; applyBezel(); store.set('bezel', st.bezel);
     for (let i = 0; i < Math.min(6, Math.abs(steps)); i++) setTimeout(() => A.bezel(), i * 28);
+    SM.haptic(SM.HAPTIC.tick);
   };
   function angleAt(e) {
     const r = app.el.watch.getBoundingClientRect(), k = r.width / 600;
@@ -195,13 +224,13 @@
   function pressPusher(which) {
     const g = app.el.case.querySelector(`#pusher-${which} .pusher-g`);
     if (g) { g.classList.add('pressed'); setTimeout(() => { g.classList.remove('pressed'); A.pusher(true); }, 140); }
-    A.pusher(false);
+    A.pusher(false); SM.haptic(SM.HAPTIC.pusher);
     if (which === 'top') app.chronoStartStop(); else app.chronoSplitReset();
   }
   app.pressPusher = pressPusher;
   app.pressCrown = function () {
     const c = app.el.case.querySelector('#crown-g'); if (c) { c.classList.remove('pushed'); void c.getBoundingClientRect(); c.classList.add('pushed'); }
-    A.crown(); app.nextFace(1);
+    A.crown(); SM.haptic(SM.HAPTIC.crown); app.nextFace(1);
   };
 
   app.timerStart = function () {
@@ -240,7 +269,7 @@
     const m = $('#modal');
     m.innerHTML = `<div class="modal-card ring"><div class="ring-shield">${SM.shieldSVG('classic')}</div><h2>${SM.esc(title)}</h2><p>${SM.esc(label || '')}</p><div class="big-time" data-live="clock"></div>
       <div class="row">${alarm ? '<button class="btn" data-act="snooze">Snooze 5 min</button>' : ''}<button class="btn primary" data-act="dismiss">Dismiss</button></div></div>`;
-    m.hidden = false; document.body.classList.add('ringing');
+    m.hidden = false; document.body.classList.add('ringing'); SM.haptic(SM.HAPTIC.alarm);
     const loop = () => { if (!ringing || ringing.n++ > 12) return; const ms = A.fanfare() || 3400; ringing.t = setTimeout(loop, ms + 700); };
     loop();
   };
@@ -292,6 +321,67 @@
     } else SM.toast(DOE ? 'Tilt lighting is on: tilt your phone to move the glint' : 'Device orientation not supported here');
   };
 
+  /* ---------------- 3D hologram (three.js, lazy-loaded on first use) ---------------- */
+  let holoLoading = null;
+  function loadHolo() {
+    if (app.holo) return Promise.resolve(app.holo);
+    if (!holoLoading) {
+      SM.Q.hold(2500); /* module parse + shader compile: don't let the governor count it */
+      holoLoading = import('./holo.mjs').then(mod => {
+        const host = document.createElement('div');
+        app.holo = mod.create({ host, onLost: () => { SM.toast('Hologram paused (graphics context lost)'); } });
+        app.holo.setVariant(st.holoVariant); app.holo.setQuality(SM.Q.tier);
+        app.holoInfo = { loadMs: Math.round(performance.now() - t0) };
+        return app.holo;
+      }).catch(err => { holoLoading = null; console.warn('Hologram unavailable', err); SM.toast('The 3D hologram needs WebGL and http(s) (it cannot load from file://).', 4200); throw err; });
+      const t0 = performance.now();
+    }
+    return holoLoading;
+  }
+  app.loadHolo = loadHolo;
+  function holoGeom() {
+    const sr = app.el.stage.getBoundingClientRect(), wr = app.el.watch.getBoundingClientRect(), k = wr.width / 600;
+    const lx = (wr.left + CX * k - sr.left) / sr.width, ly = (wr.top + CY * k - sr.top) / sr.height;
+    const sy = Math.max(.25, ly - Math.min(.34, 250 * k / sr.height));
+    return { lensPx: [lx, ly], shieldPx: [lx, sy], sizeFrac: Math.min(.7, (300 * k) / sr.width) };
+  }
+  app.openHolo = async function (mode) {
+    mode = mode || 'power';
+    let h; try { h = await loadHolo(); } catch (e) { return false; }
+    if (mode === 'face' && !app.face.holo) return false;
+    if (mode === 'power') {
+      const ui = $('#holo-ui'); ui.hidden = false; document.body.classList.add('holo-on');
+      h.show('power', $('#holo-host'), holoGeom());
+    } else {
+      let wrap = app.el.watch.querySelector('.ly-holo');
+      if (!wrap) { wrap = document.createElement('div'); wrap.className = 'ly ly-holo'; app.el.watch.insertBefore(wrap, app.el.frost); }
+      /* canvas spans x 5..95%, y 0..62% of the watch; lens sits on the dial centre (y = 50%) */
+      h.show('face', wrap, { lensPx: [.5, .5 / .62], shieldPx: [.5, .30], sizeFrac: .36 });
+      app.el.hit.querySelector('.dial-hit').setAttribute('pointer-events', 'all');
+    }
+    if (!app.holoSilent) { A.holo(); SM.haptic(SM.HAPTIC.holo); }
+    SM.emit('holo', { open: true, mode });
+    return true;
+  };
+  app.closeHolo = function () {
+    if (!app.holo) return;
+    const wasPower = app.holo.state.mode === 'power';
+    app.holo.hide();
+    $('#holo-ui').hidden = true; document.body.classList.remove('holo-on');
+    const dh = app.el.hit.querySelector('.dial-hit'); if (dh) dh.setAttribute('pointer-events', 'none');
+    const wrap = app.el.watch.querySelector('.ly-holo'); if (wrap) wrap.remove();
+    /* still on the hologram face? keep projecting above the dial */
+    if (wasPower && app.face.holo) app.openHolo('face');
+    SM.emit('holo', { open: false });
+  };
+  app.toggleHolo = function () { if (app.holo && app.holo.state.mode === 'power') app.closeHolo(); else app.openHolo('power'); };
+  app.setHoloVariant = function (v, silent) {
+    st.holoVariant = v; store.set('holoVariant', v);
+    if (app.holo) { app.holo.setVariant(v); if (!silent) { A.holo(true); SM.haptic(SM.HAPTIC.click); } }
+    SM.emit('holoVariant', v);
+  };
+  SM.Q.onChange(t => { if (app.holo) app.holo.setQuality(t); if (app.bgObj && app.bgObj.resize) app.bgObj.resize(); SM.emit('quality', t); });
+
   /* ---------------- solar corona canvas ---------------- */
   let granule = null;
   function drawSolar(c, t) {
@@ -327,7 +417,9 @@
   }
 
   /* ---------------- main loop ---------------- */
-  const rot = (e, a, dx, dy) => { if (e) e.setAttribute('transform', `${dx || dy ? `translate(${f(dx)} ${f(dy)}) ` : ''}rotate(${f(a)} ${CX} ${CY})`); };
+  /* only touch the DOM when the transform string actually changes */
+  const setT = (e, v) => { if (e && e._t !== v) { e._t = v; e.setAttribute('transform', v); } };
+  const rot = (e, a, dx, dy) => { if (e) setT(e, `${dx || dy ? `translate(${f(dx)} ${f(dy)}) ` : ''}rotate(${f(a)} ${CX} ${CY})`); };
   let lastBeat = -1, lastFrame = performance.now(), fpsAcc = [], lastLive = 0, prevLight = '';
   app.fps = 60;
   function frame(nowP) {
@@ -335,6 +427,9 @@
     const dt = nowP - lastFrame; lastFrame = nowP;
     fpsAcc.push(dt); if (fpsAcc.length > 60) fpsAcc.shift();
     app.fps = 1000 / (fpsAcc.reduce((a, b) => a + b, 0) / fpsAcc.length);
+    SM.Q.sample(dt, nowP);
+    if (!SM.Q.gate(nowP)) return; /* Balanced / Battery tiers cap the visual rate */
+    const QP = SM.Q.p(), w0 = performance.now();
     const t = nowP / 1000;
     const real = new Date(), now = st.speedOffset ? new Date(real.getTime() + st.speedOffset) : real;
     app.now = now;
@@ -367,19 +462,20 @@
     if (idle) { tx = Math.cos(t * .22) * .7; ty = -.4 + Math.sin(t * .31) * .4; }
     light.x += (tx - light.x) * .07; light.y += (ty - light.y) * .07;
     const lx = light.x, ly = light.y, lkey = f(lx * 100) + ',' + f(ly * 100);
-    if (lkey !== prevLight) {
+    if (lkey !== prevLight && SM.Q.every('glass', QP.glassHz, nowP)) {
       prevLight = lkey;
       const gm = app.el.glass.querySelector('#gl-move'); if (gm) gm.setAttribute('transform', `translate(${f(lx * 16)} ${f(ly * 14)})`);
       if (app.el.brushPat) app.el.brushPat.setAttribute('patternTransform', `rotate(${f(lx * 38 + ly * 22)} 300 400)`);
       app.el.shadow.style.transform = `translate(${f(-lx * 16)}px, ${f(14 - ly * 12)}px)`;
       if (app.bgEl && !idle) SM.bgParallax(app.bgEl, lx, ly);
     }
-    if (app.bgObj && app.bgObj.update && !document.hidden && ((app.frameN = (app.frameN || 0) + 1) & 1)) app.bgObj.update(t, lx, ly, idle);
+    if (app.bgObj && app.bgObj.update && !document.hidden && !app.bgPaused && SM.Q.every('bg', Math.min(QP.bgHz, app.bgObj.maxHz || 120), nowP)) app.bgObj.update(t, lx, ly, idle);
 
     /* hands */
     const q = app.hq; if (q) {
       let hA = hourA, mA = minA, sA = secA;
       if (sweep) { const p = Math.min(1, (nowP - sweep.t0) / sweep.dur), e = SM.ease(p); hA = hourA * e; mA = minA * e; sA = secA * e; if (p >= 1) sweep = null; }
+      const rev = app.face.reverse ? -1 : 1; hA *= rev; mA *= rev; sA *= rev;
       const sx = -lx * 3.2, sy = 3.2 - ly * 2.4;
       rot(q.hour, hA); rot(q.hourSh, hA, sx, sy); rot(q.hourSh2, hA, sx * 2, sy * 2);
       rot(q.min, mA); rot(q.minSh, mA, sx * 1.2, sy * 1.2); rot(q.minSh2, mA, sx * 2.4, sy * 2.4);
@@ -398,10 +494,12 @@
           case 'date': a = (now.getDate() - 1) / 31 * 360; break;
           case 'day': a = now.getDay() / 7 * 360; break;
           case '24h': a = (h + m / 60) / 24 * 360; break;
+          case 'tide': a = (app.tide ? app.tide.phase : 0) * 360; break;
         }
+        if (app.face.reverse) a = -a;
         if (sweep) a *= SM.ease(Math.min(1, (nowP - sweep.t0) / sweep.dur));
         const r = `rotate(${f(a)} ${sd.cx} ${sd.cy})`;
-        if (g) g.setAttribute('transform', r); if (sh) sh.setAttribute('transform', `translate(${f(sx * .6)} ${f(sy * .6)}) ${r}`);
+        setT(g, r); setT(sh, `translate(${f(sx * .6)} ${f(sy * .6)}) ${r}`);
       });
       /* progress arc: focus > timer */
       if (q.arc) {
@@ -421,9 +519,14 @@
     }
     /* digital + solar */
     if (app.face.update) app.face.update(app.el.dial, { now, fmt24: st.fmt24, chronoMs: chrono.elapsed(), timerLeft: timer.remaining(), focusLeft: focus.remaining(), alarmOn: st.alarms.some(a => a.on), digitalShow: chrono.running || chrono.elapsed() > 0 ? 'CHR' : timer.running ? 'TMR' : focus.running ? 'FOCUS' : 'TIME' });
-    if (app.el.solar && !SM.reducedMotion()) drawSolar(app.el.solar, t);
+    if (app.el.solar && !SM.reducedMotion() && SM.Q.every('solar', QP.bgHz, nowP)) drawSolar(app.el.solar, t);
     if (SM.powers.active.xray) SM.updateMovement(app.el.move, t);
+    if (app.tbOn && !SM.reducedMotion()) SM.updateTourbillon(app.el.tourb, t, (s + ms / 1000) / 60);
+    if (SM.cx) { if (app.hasEcg && SM.Q.every('ecg', 30, nowP)) SM.cx.live(nowP); else SM.cx.stepVitals(nowP); }
     SM.powers.update(nowP);
+    if (SM.game && SM.game.running) SM.game.update(nowP);
+    if (app.holo && app.holo.state.visible) app.holo.frame(nowP);
+    app.workMs = (app.workMs || 0) * .95 + (performance.now() - w0) * .05;
 
     /* per-second work */
     if (s !== app.lastSecond) {
@@ -431,6 +534,7 @@
       updateBinds(now);
       if (!st.speedOffset) checkAlarms(real);
       if (m !== app.lastMinute) { app.lastMinute = m; minuteWork(real); }
+      if (SM.cx) SM.cx.second(real);
       if (q && q.alarm) { const na = nextAlarm(real); q.alarm.setAttribute('opacity', na ? 1 : 0); if (na) rot(q.alarm, ((na.t.getHours() % 12) + na.t.getMinutes() / 60) * 30); }
     }
     if (nowP - lastLive > 90) { lastLive = nowP; SM.emit('live', now); }
@@ -450,6 +554,10 @@
     const mo = SM.astro.moon(now); app.moon = mo;
     app.moons.forEach(p => p.setAttribute('d', SM.moonPath(+p.dataset.cx, +p.dataset.cy, +p.dataset.r, mo.phase)));
     app.solar = SM.astro.solarCharge(now, st.loc.lat, st.loc.lon);
+    app.solar.base = app.solar.charge; app.solar.charge = Math.min(100, app.solar.charge + app.solarBoost());
+    if (SM.cx) { app.tide = SM.cx.tide(now); SM.cx.fetchWeather(); }
+    /* new day: rebuild dials that print the date grid */
+    if (app.dialDate !== undefined && now.getDate() !== app.dialDate) { app.dialDate = now.getDate(); if (app.subs.some(x => x.type === 'cal')) setFace(st.face, { noSweep: true, noGhost: true }); }
     SM.emit('minute', now);
   }
   app.refreshAstro = () => minuteWork(app.now || new Date());
@@ -464,19 +572,24 @@
       if (t.classList.contains('crown-hit')) { app.pressCrown(); e.preventDefault(); }
       else if (t.classList.contains('pusher-hit')) { pressPusher(t.dataset.p); e.preventDefault(); }
       else if (t.classList.contains('bezel-hit')) { drag = { a: angleAt(e), acc: 0 }; t.setPointerCapture(e.pointerId); e.preventDefault(); }
+      else if (t.classList.contains('dial-hit') && app.holo && app.holo.state.mode === 'face') { app.holo.pointerDown(e); holoDrag = true; e.preventDefault(); }
     });
+    let holoDrag = false;
     hit.addEventListener('pointermove', e => {
+      if (holoDrag && app.holo) { app.holo.pointerMove(e); return; }
       if (!drag) return; const a = angleAt(e); let d = a - drag.a; if (d > 180) d -= 360; if (d < -180) d += 360;
       drag.a = a; drag.acc += d; const steps = Math.trunc(drag.acc / 6);
       if (steps) { drag.acc -= steps * 6; app.turnBezel(steps); }
     });
-    const end = () => { drag = null; };
+    const end = e => { drag = null; if (holoDrag && app.holo) { app.holo.pointerUp(e); holoDrag = false; } };
     hit.addEventListener('pointerup', end); hit.addEventListener('pointercancel', end);
     hit.addEventListener('dblclick', e => { if (e.target.classList.contains('bezel-hit')) { st.bezel = 0; applyBezel(); store.set('bezel', 0); A.bezel(); SM.toast('Bezel zeroed'); } });
     hit.addEventListener('wheel', e => { if (e.target.classList.contains('bezel-hit')) { e.preventDefault(); app.turnBezel(e.deltaY > 0 ? 1 : -1); } }, { passive: false });
   }
 
   app.boot = function () {
+    SM.Q.init();
+    if (st.custom) SM.faceById('custom').configure(st.custom);
     SM.buildTextures();
     A.loadSettings();
     buildWatch();
@@ -492,10 +605,18 @@
     minuteWork(new Date());
     const unlock = () => { A.init(); };
     addEventListener('pointerdown', unlock, { passive: true }); addEventListener('keydown', unlock);
-    addEventListener('resize', () => { if (app.bgObj && app.bgObj.resize) app.bgObj.resize(); sizeStage(); });
+    addEventListener('resize', () => { if (app.bgObj && app.bgObj.resize) app.bgObj.resize(); sizeStage(); if (app.holo && app.holo.state.mode === 'power') { Object.assign(app.holo.state, holoGeom()); app.holo.layout(); } });
     sizeStage();
     if (SM.ui) SM.ui.init(app);
     requestAnimationFrame(frame);
+    app.ready = true;
+    if (SM.cx) SM.cx.fromHash();
+    /* full-resolution textures after first paint (cached in IndexedDB for next launch) */
+    setTimeout(() => SM.upgradeTextures().then(log => { app.texLog = log; }), 900);
+    SM.Q.onChange((t, old) => { if (SM.Q.P[t].texRes > SM.Q.P[old].texRes) SM.upgradeTextures(); });
+    setTimeout(() => SM.cx && SM.cx.fetchWeather(), 1200);
+    /* pause the scene + hologram work while the tab is hidden (rAF also stops on its own) */
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) { lastFrame = performance.now(); SM.Q.hold(800); } });
   };
   function sizeStage() {
     const s = $('#stage'), r = s.getBoundingClientRect();

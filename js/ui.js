@@ -1,4 +1,4 @@
-/* Control deck, tabs, toolbar, keyboard, intro, export, PWA */
+/* Control deck, tabs, toolbar, keyboard, intro, export, PWA (v3: Builder, Hologram, Today, Presets, Quality) */
 (function (SM) {
   'use strict';
   const { $, $$, f, pad, esc, store } = SM;
@@ -26,26 +26,31 @@
     camera: I('<path d="M3 7h4l2-3h6l2 3h4v13H3z"/><circle cx="12" cy="13" r="4"/>'),
     mute: I('<path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M17 9l5 6M22 9l-5 6"/>'),
     help: I('<circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.8.4-1 1-1 1.7M12 17h.01"/>'),
-    menu: I('<path d="M4 6h16M4 12h16M4 18h16"/>')
+    menu: I('<path d="M4 6h16M4 12h16M4 18h16"/>'),
+    builder: I('<circle cx="12" cy="12" r="8"/><path d="M12 4v3M12 17v3M4 12h3M17 12h3"/><path d="M9.5 9.5l5 5M14.5 9.5l-5 5"/>'),
+    holo: I('<path d="M5 3h14l-2 5H7z"/><path d="M7 8l5 13 5-13"/><path d="M9.5 13h5"/>'),
+    today: I('<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/><circle cx="12" cy="15.5" r="2.2"/>'),
+    presets: I('<path d="M6 3h12v18l-6-4-6 4z"/><path d="M9 8h6M9 11h4"/>')
   };
   U.ICON = ICON;
 
   const TABS = [
-    ['faces', 'Faces'], ['style', 'Strap & Case'], ['scenes', 'Scenes'], ['chrono', 'Chrono'], ['timer', 'Timer'], ['alarms', 'Alarms'],
-    ['world', 'World'], ['sky', 'Sky & Power'], ['focus', 'Focus'], ['powers', 'Powers'], ['sound', 'Sound'], ['settings', 'Settings']
+    ['faces', 'Faces'], ['builder', 'Builder'], ['style', 'Strap & Case'], ['scenes', 'Scenes'], ['holo', 'Hologram'], ['today', 'Today'], ['powers', 'Powers'], ['chrono', 'Chrono'],
+    ['timer', 'Timer'], ['alarms', 'Alarms'], ['world', 'World'], ['sky', 'Sky & Power'], ['focus', 'Focus'], ['presets', 'Presets'], ['sound', 'Sound'], ['settings', 'Settings']
   ];
   const SHORTCUTS = [
     ['← / →', 'Previous / next face'], ['B', 'Next background scene'], ['S', 'Next strap material'], ['C', 'Next strap colour'],
     ['Space', 'Chronograph start / stop'], ['L', 'Split (lap)'], ['R', 'Reset chronograph'], ['[ / ]', 'Turn bezel'],
     ['T', 'Timer start / pause'], ['F', 'Focus start / pause'], ['H', 'Heat Vision'], ['Y', 'Fly'], ['X', 'X-Ray vision'], ['Z', 'Freeze Breath'],
     ['Q', 'Super Speed'], ['G', 'Lume check (glow)'], ['M', 'Mute / unmute'], ['W', 'Watch-only mode'], ['Enter', 'Fullscreen'],
+    ['O', '3D hologram on / off'], ['K', 'Next hologram colour'], ['U', 'Tourbillon on / off'], ['J', 'Solar Recharge game'],
     ['P', 'Export PNG'], ['D', 'Surprise me (randomize)'], ['1–9, 0', 'Jump to tab'], ['?', 'Shortcut help'], ['Esc', 'Close / exit']
   ];
 
   /* ---------------- thumbnails ---------------- */
   const thumbCache = {};
   function thumb(face) {
-    if (thumbCache[face.id]) return thumbCache[face.id];
+    if (thumbCache[face.id] && !face.builder) return thumbCache[face.id];
     const d = SM.dialMarkup(face);
     let hands = SM.handsMarkup(face, d.subs);
     const R = (id, a) => { hands = hands.replace(`<g id="${id}"`, `<g id="${id}" transform="rotate(${a} 300 400)"`); };
@@ -106,7 +111,10 @@
     ['heat', 'Heat Vision', 'Twin beams sear the crystal, sparks and a red-hot glow', 'H'], ['fly', 'Fly', 'Up, up and away, through the clouds', 'Y'],
     ['xray', 'X-Ray Vision', 'See the Krypton Cal. S-38 movement ticking beneath the dial', 'X'], ['freeze', 'Freeze Breath', 'Frost crystals grow across the sapphire, then melt', 'Z'],
     ['speed', 'Super Speed', 'Twelve hours in two seconds, with motion-blurred hands', 'Q'], ['lume', 'Lume Check', 'Lights out: glowing Super-LumiNova', 'G']
-  ].map(([k, n, d, key]) => `<button class="card power-card p-${k}${SM.powers.active[k] ? ' on' : ''}" data-act="power" data-id="${k}"><b>${n}</b><small>${d}</small><kbd>${key}</kbd></button>`).join('')}</div>`;
+  ].map(([k, n, d, key]) => `<button class="card power-card p-${k}${SM.powers.active[k] ? ' on' : ''}" data-act="power" data-id="${k}"><b>${n}</b><small>${d}</small><kbd>${key}</kbd></button>`).join('')}
+    <button class="card power-card p-holo${app.holo && app.holo.state.mode === 'power' ? ' on' : ''}" data-act="holo-toggle"><b>3D Hologram</b><small>Project a spinning, extruded S shield from the dial</small><kbd>O</kbd></button>
+    <button class="card power-card p-tourb${st.tourbillon ? ' on' : ''}" data-act="tourbillon"><b>Tourbillon</b><small>Open a flying tourbillon at 6 o'clock on any face</small><kbd>U</kbd></button>
+    <button class="card power-card p-game${SM.game.running ? ' on' : ''}" data-act="game-start"><b>Solar Recharge</b><small>30-second minigame: catch sunlight, dodge Kryptonite${SM.game.best ? ' · best ' + SM.game.best : ''}</small><kbd>J</kbd></button></div>`;
   R.sound = () => {
     const cats = [['tick', 'Ticking'], ['mech', 'Crown, pushers, bezel'], ['ui', 'Interface hover/click'], ['alarm', 'Alarm fanfare & chimes'], ['powers', 'Super-power effects'], ['intro', 'Intro whoosh']];
     return `<h3>Sound <small>everything is synthesized live with WebAudio</small></h3>
@@ -118,16 +126,80 @@
     <h4>Test sounds</h4><div class="row wrap">${['tick', 'crown', 'pusher', 'bezel', 'click', 'fanfare', 'chime', 'whoosh', 'heat', 'freeze', 'xray', 'speed', 'lume', 'intro'].map(s => `<button class="chip" data-act="snd" data-id="${s}">${s}</button>`).join('')}</div>`;
   };
   R.settings = () => `<h3>Settings</h3>
+    <h4>Graphics quality</h4><label class="field wide">Quality <select id="quality">${opt('auto', SM.Q.mode, 'Auto (adapts to frame rate)')}${opt('high', SM.Q.mode, 'High (always full detail)')}${opt('battery', SM.Q.mode, 'Battery Saver (30 fps, lighter effects)')}</select></label>
+    <div class="tile wide stats" data-live="qstats"></div>
+    <label class="check"><input type="checkbox" id="haptics"${store.get('haptics', true) ? ' checked' : ''}> Haptic feedback ${SM.cx.hapticsSupported ? '' : '<em class="muted">(not supported by this browser; iPhone Safari has no vibration API)</em>'}</label>
+    <label class="field wide">Temperature <select id="units">${opt('f', SM.cx.units(), '°F')}${opt('c', SM.cx.units(), '°C')}</select></label>
     <label class="check"><input type="checkbox" id="fmt24"${st.fmt24 ? ' checked' : ''}> 24-hour time</label>
     <label class="field wide">Seconds hand motion <select id="motion">${opt('mech', st.motion, 'Mechanical sweep (6 beats/s)')}${opt('smooth', st.motion, 'Smooth glide')}${opt('quartz', st.motion, 'Quartz tick with bounce')}</select></label>
     <label class="check"><input type="checkbox" id="intro"${st.intro ? ' checked' : ''}> Play shield intro on launch</label>
     <label class="check"><input type="checkbox" id="rmotion"${SM.reducedMotion() ? ' checked' : ''}> Reduce motion (calmer backgrounds, no idle float)</label>
-    <div class="row wrap"><button class="btn" data-act="tilt">Enable tilt lighting (phones)</button><button class="btn" data-act="install" id="install-btn"${U.installEvt ? '' : ' hidden'}>Install app</button><button class="btn" data-act="replay-intro">Replay intro</button></div>
+    <div class="row wrap"><button class="btn" data-act="motion">Enable motion &amp; tilt (iPhone)</button><button class="btn" data-act="install" id="install-btn"${U.installEvt ? '' : ' hidden'}>Install app</button><button class="btn" data-act="replay-intro">Replay intro</button></div>
     <h4>Keyboard shortcuts</h4><table class="keys">${SHORTCUTS.map(([k, d]) => `<tr><td><kbd>${k}</kbd></td><td>${d}</td></tr>`).join('')}</table>
     <p class="hint">Settings are saved in this browser. Works offline once loaded (installable PWA).</p>
     <button class="btn danger" data-act="reset-all">Reset everything</button>`;
 
+  /* ---------- v3 tabs ---------- */
+  const chipRow = (k, list, cur) => `<div class="row wrap chips" role="group">${list.map(([v, l]) => `<button class="chip${String(v) === String(cur) ? ' on' : ''}" data-act="b-set" data-k="${k}" data-v="${esc(v)}">${esc(l)}</button>`).join('')}</div>`;
+  R.builder = () => {
+    const B = SM.BUILDER, c = Object.assign({}, SM.CUSTOM_DEFAULT, st.custom || {}), sel = (k, list) => `<select data-bk="${k}" aria-label="${k}">${list.map(([v, l]) => opt(v, c[k], l)).join('')}</select>`;
+    return `<h3>Face Builder <small>design your own dial · saved automatically</small></h3>
+    <div class="builder-top"><div class="b-prev" data-live="bprev">${thumb(SM.faceById('custom'))}</div>
+      <div class="b-side"><label class="field wide">Name on dial <input type="text" data-bk="name" maxlength="22" value="${esc(c.name)}"></label>
+      <button class="btn primary" data-act="wear-custom">${st.face === 'custom' ? 'Wearing it ✓' : 'Wear this face'}</button><button class="btn" data-act="b-random">Randomize</button></div></div>
+    <h4>Dial colour</h4><div class="dots">${B.dials.map(d => `<button class="dot${d === c.dial ? ' on' : ''}" data-act="b-set" data-k="dial" data-v="${d}" style="--c:${d}" title="${d}"><span>${d}</span></button>`).join('')}<label class="dot pick" title="Custom colour" style="--c:${c.dial}"><input type="color" data-bk="dial" value="${c.dial}" aria-label="Custom dial colour"></label></div>
+    <h4>Dial finish</h4>${chipRow('tex', B.tex, c.tex)}
+    <h4>Hands</h4>${chipRow('hands', B.hands, c.hands)}${chipRow('metal', B.metal, c.metal)}
+    <h4>Hour markers</h4>${chipRow('idx', B.idx, c.idx)}
+    <h4>Shield style</h4><div class="shield-pick">${['none'].concat(Object.keys(SM.SHIELD_STYLES)).map(k => `<button class="sp${k === c.shield ? ' on' : ''}" data-act="b-set" data-k="shield" data-v="${k}" title="${k}">${k === 'none' ? '<span>None</span>' : SM.shieldSVG(k)}</button>`).join('')}</div>
+    <h4>Complications</h4><div class="b-grid"><label class="field">At 9 ${sel('left', B.comps)}</label><label class="field">At 3 ${sel('right', B.comps)}</label><label class="field">At 6 ${sel('bottom', B.comps)}</label></div>
+    <h4>Bezel &amp; accents</h4><div class="b-grid"><label class="field">Bezel ${sel('bezel', B.bezel)}</label><label class="field">Bezel colour <input type="color" data-bk="bezelColor" value="${c.bezelColor}"></label>
+      <label class="field">Seconds hand <input type="color" data-bk="sec" value="${c.sec}"></label><label class="field">Lume <input type="color" data-bk="lume" value="${c.lume}"></label>
+      <label class="field">Case ${sel('finish', Object.keys(SM.FINISHES).map(k => [k, SM.FINISHES[k].name]))}</label></div>
+    <p class="hint">Tip: save the result under <b>Presets</b> and share it as a link.</p>`;
+  };
+  R.holo = () => {
+    const h = app.holo, on = h && h.state.mode === 'power', V = { classic: ['Classic 3D', 'linear-gradient(135deg,#c8102e,#ffd21f)'], cyan: ['Cyan hologram', 'radial-gradient(#bff6ff,#1fb8e0 60%,#03314a)'], kryptonite: ['Kryptonite', 'radial-gradient(#d0ffd8,#39ff6a 55%,#063a16)'], gold: ['Solid gold', 'linear-gradient(135deg,#fff4c4,#e1b24c 45%,#7b5314)'] };
+    return `<h3>3D Hologram <small>extruded S shield · WebGL · drag, pinch, tilt</small></h3>
+    <div class="row"><button class="btn primary big-btn" data-act="holo-toggle">${on ? 'Deactivate hologram' : 'Activate hologram'}</button></div>
+    <h4>Projection colour</h4><div class="grid holo-vars">${Object.keys(V).map(k => `<button class="card hv-card${st.holoVariant === k ? ' on' : ''}" data-act="holo-variant" data-id="${k}"><span class="hv-sw" style="background:${V[k][1]}"></span><b>${V[k][0]}</b></button>`).join('')}</div>
+    <div class="row wrap"><button class="btn" data-act="face" data-id="hologram">Wear the Hologram Command face</button><button class="btn" data-act="motion">Enable tilt &amp; motion (iPhone)</button></div>
+    <label class="range">Zoom <input type="range" id="holo-zoom" min=".55" max="2.2" step=".01" value="${h ? h.state.zoom : 1}"><output>${Math.round((h ? h.state.zoom : 1) * 100)}%</output></label>
+    <div class="tile wide stats" data-live="holoStats">${h ? '' : 'three.js loads the first time you activate the hologram (≈160 KB gzipped), and its render loop only runs while it is on screen.'}</div>
+    <p class="hint">Geometry is built from the same vector S shield as the dial, extruded 3D with a bevel. Cyan and Kryptonite use a holographic shader (Fresnel glow, scanlines, flicker and glitch); Classic and Gold are solid metal with real reflections.</p>`;
+  };
+  R.today = () => {
+    const W = SM.cx.weather, info = W.temp !== undefined ? SM.cx.wxInfo(W.code) : null, now = app.now || new Date(), T = app.tide || SM.cx.tide(now), R2 = SM.cx.rings(), M = SM.cx.monthMatrix(now), u = SM.cx.units();
+    const ring = (v, r, c) => `<circle cx="60" cy="60" r="${r}" fill="none" stroke="${c}" stroke-opacity=".18" stroke-width="10"/><path data-live="ring" data-r="${r}" d="${v > .004 ? SM.arcPath(60, 60, r, 0, Math.min(.999, v) * 360) : ''}" fill="none" stroke="${c}" stroke-width="10" stroke-linecap="round"/>`;
+    const tt = d => d ? SM.fmtClock(d.t, st.fmt24) : '—';
+    return `<h3>Today <small>${SM.DAYS[now.getDay()]}, ${SM.MONTHS[now.getMonth()]} ${now.getDate()}</small></h3>
+    <blockquote class="quote">“${esc(SM.cx.quote(now))}”<small>Daily Superman thought (original)</small></blockquote>
+    <div class="today-grid">
+      <div class="tile wx"><small>Weather · ${esc(st.loc.name)}</small>${info ? `<div class="wx-row"><svg viewBox="-12 -12 24 26" class="wx-ic">${SM.cx.wxGlyph(info.icon, W.isDay)}</svg><b class="wx-t">${SM.cx.temp(W.temp)}${u.toUpperCase()}</b></div><span>${info.label} · H ${SM.cx.temp(W.hi)} L ${SM.cx.temp(W.lo)}</span><span>Feels ${SM.cx.temp(W.feels)} · ${Math.round(W.hum)}% humidity · wind ${Math.round(W.wind)} mph${W.pop != null ? ' · ' + W.pop + '% rain' : ''}</span>` : `<b>${W.status === 'loading' ? 'Loading…' : 'No weather yet'}</b>`}
+        <span class="muted">${esc(W.msg || (W.t ? 'Updated ' + SM.fmtClock(new Date(W.t), st.fmt24) + ' · Open-Meteo' : 'Open-Meteo, no key needed'))}</span>
+        <div class="row"><button class="chip${u === 'f' ? ' on' : ''}" data-act="units" data-id="f">°F</button><button class="chip${u === 'c' ? ' on' : ''}" data-act="units" data-id="c">°C</button><button class="chip" data-act="wx-refresh">Refresh</button></div></div>
+      <div class="tile rings-tile"><small>Activity rings</small><svg viewBox="0 0 120 120" class="rings-big">${ring(R2.move, 52, '#ff3b50')}${ring(R2.solar, 40, '#ffd34a')}${ring(R2.focus, 28, '#3fe0ff')}</svg>
+        <span><b style="color:#ff6a7a" data-live="steps">${R2.steps}</b> / ${SM.cx.activity.goal} steps${SM.cx.activity.live ? '' : ' <em class="muted">(motion sensor off)</em>'}</span><span><b style="color:#ffd34a">${Math.round(R2.solar * 100)}%</b> solar · <b style="color:#3fe0ff">${R2.fc}</b>/4 focus</span>
+        <div class="row"><button class="chip" data-act="motion">Enable step counter</button><label class="field mini">Goal <input type="number" id="step-goal" min="500" max="50000" step="500" value="${SM.cx.activity.goal}"></label></div></div>
+      <div class="tile tide-tile"><small>Metropolis Harbor tide (model)</small><div class="tide-bar"><i style="height:${Math.round(T.level * 100)}%"></i><em>${T.ft.toFixed(1)} ft</em></div>
+        <span><b>${T.rising ? 'Rising ↑' : 'Falling ↓'}</b> · ${T.kind}</span><span>Next high ${tt(T.nextHigh)} · next low ${tt(T.nextLow)}</span><span class="muted">Harmonic model (M2 + S2 + N2 + K1), not for navigation.</span></div>
+      <div class="tile vit-tile"><small>Kryptonian vitals</small><svg viewBox="0 0 200 70" class="ecg"><path data-live="ecg" d="" fill="none" stroke="#ff3b50" stroke-width="1.6"/></svg><span><b data-live="bpm">52</b> BPM · rises with powers, games and alarms</span></div>
+      <div class="tile wide cal-tile"><small>${SM.MONTHS[M.m]} ${M.y}</small><div class="cal">${'SMTWTFS'.split('').map(d => `<b>${d}</b>`).join('')}${M.cells.map(d => `<span class="${d === M.today ? 'today' : ''}">${d || ''}</span>`).join('')}</div></div>
+    </div>`;
+  };
+  R.presets = () => {
+    const saved = SM.cx.list(), row = (p, i, src) => `<li><button class="card preset" data-act="preset-load" data-src="${src}" data-i="${i}"><b>${esc(p.name)}</b><small>${esc(SM.faceById(p.face).name)} · ${esc(SM.bgById(p.bg || st.bg).name)} · ${esc((SM.STRAPS[p.strap] || {}).name || '')}</small></button>${src === 'saved' ? `<button class="icon-btn" data-act="preset-del" data-i="${i}" title="Delete preset" aria-label="Delete ${esc(p.name)}">✕</button>` : ''}</li>`;
+    return `<h3>Theme presets <small>save · load · share as a link</small></h3>
+    <div class="row"><input type="text" id="preset-name" maxlength="30" placeholder="Name this look" value="${esc(app.face.name)} + ${esc(SM.bgById(st.bg).name)}" aria-label="Preset name"><button class="btn primary" data-act="preset-save">Save</button></div>
+    <div class="row"><button class="btn" data-act="preset-share">Share current look (copy link)</button></div>
+    <input type="text" id="share-url" readonly class="share-url" value="" placeholder="Share link appears here" aria-label="Share link">
+    <h4>My presets</h4><ul class="preset-list">${saved.map((p, i) => row(p, i, 'saved')).join('') || '<li class="muted">Nothing saved yet.</li>'}</ul>
+    <h4>Built-in looks</h4><ul class="preset-list">${SM.cx.BUILTIN_PRESETS.map((p, i) => row(p, i, 'builtin')).join('')}</ul>
+    <p class="hint">A share link stores the look in the URL after <code>#preset=</code>, so it works on GitHub Pages with no server. Opening it applies the look instantly.</p>`;
+  };
+
   U.show = function (tab) {
+    if (!R[tab]) tab = 'faces';
     U.tab = tab; store.set('tab', tab);
     $$('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
     const body = $('#tab-body'); body.innerHTML = R[tab](); body.scrollTop = 0; body.dataset.tab = tab;
@@ -189,6 +261,16 @@
     const html = chips.join(''); const sc = $('#status-chips'); if (sc._h !== html) { sc._h = html; sc.innerHTML = html; }
     const tc = $('#top-clock'); if (tc) { const v = SM.fmtClock(now, st.fmt24, true); if (tc.textContent !== v) tc.textContent = v; }
     if ($('#modal') && !$('#modal').hidden) setL('clock', SM.fmtClock(new Date(), st.fmt24));
+    if (U.tab === 'today') {
+      $$('[data-live="ecg"]').forEach(e => e.setAttribute('d', SM.cx.ecgPath(2, 52, 196, 40, 90)));
+      setL('bpm', String(Math.round(SM.cx.vitals.bpm))); setL('steps', String(SM.cx.activity.steps));
+    }
+    if (now.getMilliseconds() < 100 || U._statsT === undefined || performance.now() - U._statsT > 1000) {
+      U._statsT = performance.now();
+      const qs = SM.Q.stats, P = SM.Q.p();
+      setL('qstats', `Now: ${P.name} tier · ${qs ? Math.round(qs.fps) + ' fps (median ' + qs.med.toFixed(1) + ' ms, p90 ' + qs.p90.toFixed(1) + ' ms) · display ~' + qs.hz + ' Hz' : 'measuring…'} · background ${P.bgHz} Hz · particles ${Math.round(P.particles * 100)}% · hologram ≤${P.holoPR}× pixels${SM.Q.log.length ? ' · last change: ' + SM.Q.log[SM.Q.log.length - 1].why : ''}`);
+      if (app.holo && U.tab === 'holo') { const i = app.holo.info(); setL('holoStats', `${i.renderer} · ${i.mode || 'off'} · ${i.w}×${i.h} css px @ ${i.pr}× · ${i.ms.toFixed(1)} ms/frame GPU submit · ${i.dust} dust particles · bloom ${i.bloom ? 'on' : 'off'}`); }
+    }
   };
 
   /* ---------------- actions ---------------- */
@@ -218,11 +300,33 @@
     power: b => U.power(b.dataset.id),
     snd: b => { A.init(); const k = b.dataset.id; if (k === 'heat') A.heat(2); else if (k === 'whoosh') A.whoosh(1, true); else if (k === 'speed') A.speed(2); else if (k === 'xray') A.xray(true); else if (k === 'pusher') { A.pusher(false); setTimeout(() => A.pusher(true), 150); } else A[k](); },
     tilt: () => app.enableTilt(),
+    motion: async () => { const r = await SM.cx.enableMotion(); SM.toast(`Motion: ${r.motion} · tilt: ${r.orientation}`); rerender(['today']); },
+    'b-set': b => { const c = Object.assign({}, SM.CUSTOM_DEFAULT, st.custom || {}); c[b.dataset.k] = b.dataset.v; U.setCustom(c); },
+    'b-random': () => { const B = SM.BUILDER, pk = a => a[Math.floor(Math.random() * a.length)], k = a => pk(a)[0]; U.setCustom(Object.assign({}, st.custom || SM.CUSTOM_DEFAULT, { dial: pk(B.dials), tex: k(B.tex), hands: k(B.hands), metal: k(B.metal), idx: k(B.idx), shield: pk(Object.keys(SM.SHIELD_STYLES)), left: k(B.comps), right: k(B.comps), bottom: k(B.comps), bezel: k(B.bezel) })); },
+    'wear-custom': () => { app.setFace('custom'); },
+    'holo-toggle': () => { A.init(); app.toggleHolo(); },
+    'holo-variant': b => { app.setHoloVariant(b.dataset.id); if (!app.holo) app.openHolo('power'); rerender(['holo']); },
+    'holo-exit': () => app.closeHolo(),
+    tourbillon: () => app.setTourbillon(),
+    'game-start': () => { $('#modal').hidden = true; SM.game.start(); },
+    'game-stop': () => SM.game.stop(false),
+    'modal-close': () => { $('#modal').hidden = true; },
+    units: b => { store.set('units', b.dataset.id); SM.emit('weather', SM.cx.weather); rerender(['today']); },
+    'wx-refresh': () => { SM.cx.fetchWeather(true); },
+    'preset-save': () => { const n = ($('#preset-name').value || '').trim() || 'My preset'; SM.cx.save(n); SM.toast('Saved preset: ' + n); rerender(['presets']); },
+    'preset-load': b => { const list = b.dataset.src === 'saved' ? SM.cx.list() : SM.cx.BUILTIN_PRESETS, p = list[+b.dataset.i]; if (p) { SM.cx.apply(p); SM.toast('Loaded: ' + p.name); A.whoosh(.7, true); } },
+    'preset-del': b => { const p = SM.cx.list()[+b.dataset.i]; if (p) { SM.cx.remove(p.name); rerender(['presets']); } },
+    'preset-share': async () => { const r = await SM.cx.share(); const i = $('#share-url'); if (i) { i.value = r.url; i.select && i.select(); } SM.toast(r.how === 'clipboard' ? 'Share link copied to clipboard' : r.how === 'share' ? 'Shared' : 'Copy the link below'); },
     install: () => { if (U.installEvt) { U.installEvt.prompt(); U.installEvt.userChoice.finally(() => { U.installEvt = null; const b = $('#install-btn'); if (b) b.hidden = true; }); } },
     'replay-intro': () => U.intro(true),
     'reset-all': () => { if (confirm('Reset all settings, alarms and preferences?')) { store.reset(); location.reload(); } },
     surprise: () => U.surprise(), watchonly: () => U.watchOnly(), fullscreen: () => U.fullscreen(), export: () => U.exportPNG(),
     mute: () => U.toggleMute(), help: () => U.help(), panel: () => document.body.classList.toggle('panel-open'), 'close-help': () => U.help(false), 'exit-wo': () => U.watchOnly(false)
+  };
+  U.setCustom = function (c) {
+    app.setCustom(c);
+    const pv = $('[data-live="bprev"]'); if (pv) pv.innerHTML = thumb(SM.faceById('custom'));
+    const sc = $('#tab-body').scrollTop; if (U.tab === 'builder') { U.show('builder'); $('#tab-body').scrollTop = sc; }
   };
   U.power = function (k) {
     A.init(); const P = SM.powers;
@@ -259,7 +363,7 @@
     const W = 1600, H = 1200, bg = SM.bgById(st.bg);
     const layers = SM.shadowMarkup() + ['strap', 'case'].map(k => app.el[k].innerHTML).join('');
     const dial = app.el.dial, dsvg = dial.querySelector('.dial-svg'), over = dial.querySelector('.dial-over');
-    const top = ['hands', 'glass'].map(k => app.el[k].innerHTML).join('');
+    const top = $$('.dial-anim svg', dial).map(e => e.innerHTML).join('') + ['tourb', 'hands', 'glass'].map(k => app.el[k].innerHTML).join('');
     const mk = inner => `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 600 800" width="900" height="1200"><defs>${SM.defsMarkup()}</defs>${inner}</svg>`;
     const load = s => new Promise((res, rej) => { const im = new Image(); im.onload = () => res(im); im.onerror = rej; im.src = URL.createObjectURL(new Blob([s], { type: 'image/svg+xml' })); });
     const c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d');
@@ -272,6 +376,10 @@
       x.drawImage(a, ox, 0); x.drawImage(b, ox, 0);
       if (app.el.solar) { const k = 900 / 600; x.save(); x.beginPath(); x.arc(ox + 300 * k, 400 * k, 146 * k, 0, 6.283); x.clip(); x.drawImage(app.el.solar, ox + 154 * k, 254 * k, 292 * k, 292 * k); x.restore(); }
       x.drawImage(d, ox, 0);
+      if (app.holo && app.holo.state.visible) {
+        const hr = app.holo.canvas.getBoundingClientRect(), wr = app.el.watch.getBoundingClientRect(), k = 900 / wr.width;
+        app.holo.drawTo(x, ox + (hr.left - wr.left) * k, (hr.top - wr.top) * k, hr.width * k, hr.height * k);
+      }
       x.font = '700 34px SMOswald, Oswald, sans-serif'; x.fillStyle = 'rgba(255,255,255,.92)'; x.textAlign = 'left';
       x.shadowColor = 'rgba(0,0,0,.6)'; x.shadowBlur = 8;
       x.fillText("NICK'S SUPERMAN WATCH", 48, H - 86);
@@ -296,8 +404,10 @@
       r: () => { if (app.chrono.running) app.chronoStartStop(); app.chronoSplitReset(); A.pusher(false); },
       '[': () => app.turnBezel(-1), ']': () => app.turnBezel(1), t: () => app.timerStart(), f: () => app.focusStart(),
       h: () => U.power('heat'), y: () => U.power('fly'), x: () => U.power('xray'), z: () => U.power('freeze'), q: () => U.power('speed'), g: () => U.power('lume'),
+      o: () => { A.init(); app.toggleHolo(); }, u: () => app.setTourbillon(), j: () => { if (SM.game.running) SM.game.stop(false); else SM.game.start(); },
+      k: () => { const ks = ['classic', 'cyan', 'kryptonite', 'gold'], i = ks.indexOf(st.holoVariant); app.setHoloVariant(ks[(i + 1) % ks.length]); SM.toast('Hologram: ' + ks[(i + 1) % ks.length]); rerender(['holo']); },
       m: () => U.toggleMute(), w: () => U.watchOnly(), Enter: () => U.fullscreen(), p: () => U.exportPNG(), d: () => U.surprise(), '?': () => U.help(),
-      Escape: () => { if (!$('#help').hidden) U.help(false); else if (!$('#modal').hidden) app.dismiss(false); else if (document.body.classList.contains('watch-only')) U.watchOnly(false); else { SM.powers.xray(false); SM.powers.lume(false); } }
+      Escape: () => { if (!$('#help').hidden) U.help(false); else if (SM.game.running) SM.game.stop(false); else if (app.holo && app.holo.state.mode === 'power') app.closeHolo(); else if (!$('#modal').hidden) { app.dismiss(false); $('#modal').hidden = true; } else if (document.body.classList.contains('watch-only')) U.watchOnly(false); else { SM.powers.xray(false); SM.powers.lume(false); } }
     };
     const fn = map[k] || map[k.toLowerCase()];
     if (fn) { e.preventDefault(); fn(); return; }
@@ -310,7 +420,7 @@
     const skip = !force && (!st.intro || /[?&]nointro/.test(location.search));
     if (skip) { box.remove(); document.body.classList.add('ready'); return; }
     box.hidden = false; box.className = 'intro';
-    box.innerHTML = `<div class="intro-inner"><div class="intro-shield">${SM.shieldSVG('chrome', 'intro-svg')}</div><div class="intro-title">NICK'S <b>SUPERMAN</b> WATCH</div><div class="intro-sub">KRYPTON CAL. S-38 · VERSION 2</div><button class="btn primary intro-go" data-act="intro-go">Power up</button><small class="intro-skip">tap anywhere to begin · sound on</small></div>`;
+    box.innerHTML = `<div class="intro-inner"><div class="intro-shield">${SM.shieldSVG('chrome', 'intro-svg')}</div><div class="intro-title">NICK'S <b>SUPERMAN</b> WATCH</div><div class="intro-sub">KRYPTON CAL. S-38 · VERSION 3</div><button class="btn primary intro-go" data-act="intro-go">Power up</button><small class="intro-skip">tap anywhere to begin · sound on</small></div>`;
     let done = false, started = false;
     const finish = () => { if (done) return; done = true; box.classList.add('leave'); document.body.classList.add('ready'); setTimeout(() => { box.hidden = true; box.innerHTML = ''; }, 900); };
     const start = () => { if (started) return; started = true; A.init(); A.intro(); box.classList.add('go'); setTimeout(finish, 2600); };
@@ -322,7 +432,7 @@
   U.init = function (a) {
     app = a; st = app.state;
     $('#tabs').innerHTML = TABS.map(([id, l], i) => `<button data-tab="${id}" title="${l} (${(i + 1) % 10})">${ICON[id]}<span>${l}</span></button>`).join('');
-    $$('#tb button').forEach(b => { const k = b.dataset.act; b.insertAdjacentHTML('afterbegin', ICON[{ surprise: 'dice', watchonly: 'watch', fullscreen: 'full', export: 'camera', mute: 'sound', help: 'help', panel: 'menu' }[k]] || ''); });
+    $$('#tb button').forEach(b => { const k = b.dataset.act; b.insertAdjacentHTML('afterbegin', ICON[{ 'holo-toggle': 'holo', surprise: 'dice', watchonly: 'watch', fullscreen: 'full', export: 'camera', mute: 'sound', help: 'help', panel: 'menu' }[k]] || ''); });
     $('#brand-shield').innerHTML = SM.shieldSVG('classic');
     $('#tabs').addEventListener('click', e => { const b = e.target.closest('button'); if (b) { U.show(b.dataset.tab); A.click(); } });
     document.addEventListener('click', e => {
@@ -345,9 +455,14 @@
       else if (t.id === 'motion') { st.motion = t.value; store.set('motion', t.value); }
       else if (t.id === 'intro') { st.intro = t.checked; store.set('intro', t.checked); }
       else if (t.id === 'rmotion') { store.set('reduceMotion', t.checked); document.body.classList.toggle('reduce-motion', t.checked); }
+      else if (t.id === 'quality') { SM.Q.setMode(t.value); SM.toast('Quality: ' + t.options[t.selectedIndex].text); rerender(['settings']); }
+      else if (t.id === 'haptics') { store.set('haptics', t.checked); if (t.checked) SM.haptic(SM.HAPTIC.click); }
+      else if (t.id === 'units') { store.set('units', t.value); SM.emit('weather', SM.cx.weather); }
+      else if (t.id === 'step-goal') { SM.cx.activity.goal = Math.max(500, +t.value || 8000); store.set('stepGoal', SM.cx.activity.goal); }
+      else if (t.dataset.bk) { const c = Object.assign({}, SM.CUSTOM_DEFAULT, st.custom || {}); c[t.dataset.bk] = t.value; U.setCustom(c); }
       else if (t.id === 'loc-sel') { const c = app.CITIES[+t.value]; if (c) { st.loc = { name: c.name, lat: c.lat, lon: c.lon }; store.set('loc', st.loc); app.refreshAstro(); rerender(['sky']); } }
     });
-    document.addEventListener('input', e => { const t = e.target; if (t.type === 'range') { const o = t.parentNode.querySelector('output'); if (o) o.textContent = Math.round(t.value * 100) + '%'; if (t.id === 'vol') { A.volume = +t.value; A.apply(); } } });
+    document.addEventListener('input', e => { const t = e.target; if (t.id === 'holo-zoom') { if (app.holo) app.holo.setZoom(+t.value); } if (t.type === 'range') { const o = t.parentNode.querySelector('output'); if (o) o.textContent = Math.round(t.value * 100) + '%'; if (t.id === 'vol') { A.volume = +t.value; A.apply(); } } });
     addEventListener('keydown', onKey);
     SM.on('live', U.live);
     SM.on('face', () => rerender(['faces']));
@@ -359,6 +474,11 @@
     SM.on('alarms', () => rerender(['alarms']));
     SM.on('minute', () => { if (U.tab === 'world') drawMap(); if (U.tab === 'sky') renderSky(); });
     SM.on('power', p => { if (p === 'lume') app.buildLume(); app.lumeOn = !!SM.powers.active.lume; rerender(['powers']); });
+    SM.on('holo', () => rerender(['holo', 'powers'])); SM.on('game', () => rerender(['powers'])); SM.on('tourbillon', () => rerender(['powers']));
+    SM.on('weather', () => rerender(['today'])); SM.on('quality', () => rerender(['settings'])); SM.on('preset', () => rerender(['presets', 'builder']));
+    SM.on('face', () => rerender(['builder']));
+    const syncHv = () => $$('.holo-bar .hv[data-id]').forEach(b => b.classList.toggle('on', b.dataset.id === st.holoVariant));
+    SM.on('holoVariant', syncHv); syncHv();
     if (store.get('reduceMotion', false)) document.body.classList.add('reduce-motion');
     if (navigator.getBattery) navigator.getBattery().then(b => { U.battery = b; const up = () => { if (U.tab === 'sky') renderSky(); }; b.addEventListener('levelchange', up); b.addEventListener('chargingchange', up); }).catch(() => { });
     addEventListener('beforeinstallprompt', e => { e.preventDefault(); U.installEvt = e; const b = $('#install-btn'); if (b) b.hidden = false; });

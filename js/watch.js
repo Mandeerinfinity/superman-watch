@@ -140,6 +140,11 @@
     } else {
       g += `<circle cx="${CX}" cy="${CY}" r="174.5" fill="none" stroke="url(#c-ins)" stroke-width="23"/>`;
       if (bz.tex) g += `<circle cx="${CX}" cy="${CY}" r="174.5" fill="none" stroke="url(#${bz.tex})" stroke-width="23" opacity=".6"/>`;
+      /* v3: polished-ceramic insert: fine grain, bevelled inner/outer edges and two soft specular arcs */
+      else g += `<circle cx="${CX}" cy="${CY}" r="174.5" fill="none" stroke="url(#p-grain)" stroke-width="23" opacity=".09"/>
+        <path d="M ${f(CX + 174.5 * Math.cos(-2.5))} ${f(CY + 174.5 * Math.sin(-2.5))} A 174.5 174.5 0 0 1 ${f(CX + 174.5 * Math.cos(-1.75))} ${f(CY + 174.5 * Math.sin(-1.75))}" fill="none" stroke="#fff" stroke-opacity=".10" stroke-width="20" stroke-linecap="round"/>
+        <path d="M ${f(CX + 174.5 * Math.cos(.55))} ${f(CY + 174.5 * Math.sin(.55))} A 174.5 174.5 0 0 1 ${f(CX + 174.5 * Math.cos(.95))} ${f(CY + 174.5 * Math.sin(.95))}" fill="none" stroke="#fff" stroke-opacity=".05" stroke-width="18" stroke-linecap="round"/>
+        <circle cx="${CX}" cy="${CY}" r="164.4" fill="none" stroke="#fff" stroke-opacity=".22" stroke-width=".8"/><circle cx="${CX}" cy="${CY}" r="184.9" fill="none" stroke="#fff" stroke-opacity=".16" stroke-width=".8"/>`;
       g += `<circle cx="${CX}" cy="${CY}" r="174.5" fill="none" stroke="url(#c-gloss)" stroke-width="23"/>
         <circle cx="${CX}" cy="${CY}" r="185.8" fill="none" stroke="#000" stroke-opacity=".5" stroke-width="1"/><circle cx="${CX}" cy="${CY}" r="163.4" fill="none" stroke="#000" stroke-opacity=".5" stroke-width="1"/>`;
       if (bz.type === 'diver') {
@@ -214,6 +219,23 @@
     return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
   }
   SM.shade = shade;
+  /* stitches along both edges of a strap half: each one a slanted capsule with a lit side and a hole at each end */
+  function stitches(top, ins, col) {
+    const lines = top ? [[216 + ins, -20, 210 + ins, 250], [384 - ins, -20, 390 - ins, 250]] : [[210 + ins, 550, 216 + ins, 820], [390 - ins, 550, 384 - ins, 820]];
+    let sh = '', th = '', hi = '', holes = '';
+    lines.forEach(([x0, y0, x1, y1]) => {
+      const L = Math.hypot(x1 - x0, y1 - y0), n = Math.floor(L / 6.2), ux = (x1 - x0) / L, uy = (y1 - y0) / L;
+      for (let i = 0; i < n; i++) {
+        const t = (i + .5) * L / n, cx = x0 + ux * t, cy = y0 + uy * t;
+        const ax = cx - ux * 2.1 - .5, ay = cy - uy * 2.1, bx = cx + ux * 2.1 + .5, by = cy + uy * 2.1;
+        sh += `M${f(ax + .5)} ${f(ay + .8)}L${f(bx + .5)} ${f(by + .8)}`;
+        th += `M${f(ax)} ${f(ay)}L${f(bx)} ${f(by)}`;
+        hi += `M${f(ax + .3)} ${f(ay - .3)}L${f(cx)} ${f(cy - .4)}`;
+        holes += `M${f(ax - ux * 1.1)} ${f(ay - uy * 1.1)}h.01`;
+      }
+    });
+    return `<path d="${holes}" stroke="#000" stroke-opacity=".7" stroke-width="1.5" stroke-linecap="round"/><path d="${sh}" stroke="#000" stroke-opacity=".5" stroke-width="1.7" stroke-linecap="round"/><path d="${th}" stroke="${col}" stroke-width="1.45" stroke-linecap="round"/><path d="${hi}" stroke="#fff" stroke-opacity=".45" stroke-width=".5" stroke-linecap="round"/>`;
+  }
   SM.strapMarkup = function (mat, color, finKey) {
     const p = FIN[finKey] || FIN.steel;
     let d = `<defs>
@@ -260,8 +282,10 @@
         if (mat === 'suit') s += `<path d="${strapShape(top)}" fill="url(#p-suit)"/>${color.toLowerCase() === '#1d4fb8' ? '' : `<path d="${strapShape(top)}" fill="${base}" opacity=".5"/>`}`;
         if (mat === 'leather') {
           s += `<path d="${strapInset(top, 13)}" fill="url(#s-pad)"/>`;
-          s += `<path d="${edgeLines(top, 7)}" stroke="#000" stroke-opacity=".45" stroke-width="1.6" stroke-dasharray="5 3.4" transform="translate(.6 .9)"/>
-            <path d="${edgeLines(top, 7)}" stroke="${SM.leatherThread || shade(base, .55)}" stroke-width="1.5" stroke-dasharray="5 3.4" stroke-linecap="round"/>`;
+          /* painted edge + individual saddle stitches (angled thread, highlight, awl hole) */
+          s += `<path d="${edgeLines(top, 1.6)}" stroke="${shade(base, -.45)}" stroke-width="3" opacity=".9"/><path d="${edgeLines(top, 3.2)}" stroke="#fff" stroke-opacity=".12" stroke-width=".8"/>`;
+          s += stitches(top, 8, SM.leatherThread || shade(base, .6));
+          s += `<path d="${strapInset(top, 13)}" fill="none" stroke="#000" stroke-opacity=".18" stroke-width="1.2"/>`;
         }
         if (mat === 'rubber') {
           s += `<path d="${strapInset(top, 52)}" fill="#fff" opacity=".07"/><path d="${edgeLines(top, 52)}" stroke="#000" stroke-opacity=".45" stroke-width="2"/><path d="${edgeLines(top, 53.5)}" stroke="#fff" stroke-opacity=".14" stroke-width="1"/>`;
@@ -302,10 +326,16 @@
       <linearGradient id="gl-glint" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".26"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
       <radialGradient id="gl-spec" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#fff" stop-opacity=".95"/><stop offset=".4" stop-color="#fff" stop-opacity=".35"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
       <radialGradient id="gl-heat" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ffcf6a" stop-opacity=".55"/><stop offset=".5" stop-color="#ff5a14" stop-opacity=".35"/><stop offset="1" stop-color="#b00000" stop-opacity=".15"/></radialGradient>
+      <radialGradient id="gl-fres" cx=".5" cy=".5" r=".5"><stop offset=".80" stop-color="#cfe6ff" stop-opacity="0"/><stop offset=".94" stop-color="#cfe6ff" stop-opacity=".07"/><stop offset=".99" stop-color="#fff" stop-opacity=".28"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+      <linearGradient id="gl-win" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".16"/><stop offset="1" stop-color="#fff" stop-opacity=".02"/></linearGradient>
+      <radialGradient id="gl-ao" cx=".5" cy=".5" r=".5"><stop offset=".9" stop-color="#000" stop-opacity="0"/><stop offset=".975" stop-color="#000" stop-opacity=".35"/><stop offset="1" stop-color="#000" stop-opacity=".1"/></radialGradient>
     </defs>
+    <circle cx="${CX + 2}" cy="${CY + 3}" r="157" fill="url(#gl-ao)"/>
     <g clip-path="url(#gl-clip)">
       <circle cx="${CX}" cy="${CY}" r="158" fill="url(#gl-ar)"/>
+      <circle cx="${CX}" cy="${CY}" r="158" fill="url(#gl-fres)"/>
       <g id="gl-move">
+        <g opacity=".55"><path d="M168 262 L236 232 L262 300 L196 334 Z" fill="url(#gl-win)"/><path d="M244 228 L292 208 L316 270 L268 294 Z" fill="url(#gl-win)"/><path d="M175 344 L258 306 L270 330 L186 372 Z" fill="url(#gl-win)" opacity=".6"/><path d="M200 318 L300 274" stroke="#fff" stroke-opacity=".12" stroke-width="3"/></g>
         <path d="${pathCrescent()}" fill="url(#gl-refl)" opacity=".75"/>
         <path d="M188 318 Q226 262 300 246" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="2.2" stroke-linecap="round"/>
         <rect x="360" y="468" width="70" height="26" rx="10" fill="#fff" opacity=".07" transform="rotate(-38 395 481)"/>
@@ -316,6 +346,9 @@
       <circle id="gl-heat" cx="${CX}" cy="${CY}" r="158" fill="url(#gl-heat)" opacity="0"/>
     </g>
     <circle cx="${CX}" cy="${CY}" r="158" fill="url(#gl-edge)"/>
+    <circle cx="${CX}" cy="${CY}" r="155.2" fill="none" stroke="#000" stroke-opacity=".25" stroke-width="1.6"/>
+    <path d="${SM.arcPath(CX, CY, 156.3, 120, 250)}" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="1"/>
+    <path d="${SM.arcPath(CX, CY, 156.3, 290, 350)}" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="1.2"/>
     <circle cx="${CX}" cy="${CY}" r="157" fill="none" stroke="#fff" stroke-opacity=".22" stroke-width=".8"/>`;
   };
   function pathCrescent() {
@@ -325,10 +358,11 @@
 
   /* ---------------- HIT TARGETS ---------------- */
   SM.hitMarkup = function () {
-    return `<circle class="hit bezel-hit" cx="${CX}" cy="${CY}" r="178" fill="none" stroke="transparent" stroke-width="34" pointer-events="stroke"><title>Rotating bezel — drag to turn (double-click resets)</title></circle>
-      <rect class="hit crown-hit" x="502" y="366" width="56" height="68" rx="8" fill="transparent" pointer-events="all"><title>Crown — click to change face</title></rect>
-      <g transform="rotate(-40 ${CX} ${CY})"><rect class="hit pusher-hit" data-p="top" x="498" y="378" width="42" height="44" rx="6" fill="transparent" pointer-events="all"><title>Top pusher — start / stop chronograph</title></rect></g>
-      <g transform="rotate(40 ${CX} ${CY})"><rect class="hit pusher-hit" data-p="bottom" x="498" y="378" width="42" height="44" rx="6" fill="transparent" pointer-events="all"><title>Bottom pusher — split / reset</title></rect></g>`;
+    return `<circle class="hit dial-hit" cx="${CX}" cy="${CY}" r="150" fill="transparent" pointer-events="none"><title>Drag to spin the hologram</title></circle>
+      <circle class="hit bezel-hit" cx="${CX}" cy="${CY}" r="178" fill="none" stroke="transparent" stroke-width="34" pointer-events="stroke"><title>Rotating bezel — drag to turn (double-click resets)</title></circle>
+      <rect class="hit crown-hit" x="500" y="354" width="92" height="92" rx="10" fill="transparent" pointer-events="all"><title>Crown — click to change face</title></rect>
+      <g transform="rotate(-40 ${CX} ${CY})"><rect class="hit pusher-hit" data-p="top" x="498" y="354" width="92" height="92" rx="10" fill="transparent" pointer-events="all"><title>Top pusher — start / stop chronograph</title></rect></g>
+      <g transform="rotate(40 ${CX} ${CY})"><rect class="hit pusher-hit" data-p="bottom" x="498" y="354" width="92" height="92" rx="10" fill="transparent" pointer-events="all"><title>Bottom pusher — split / reset</title></rect></g>`;
   };
 
   /* ---------------- HANDS ---------------- */
@@ -446,6 +480,43 @@
   }
   const MV = { barrel: [246, 346], center: [300, 400], third: [352, 352], fourth: [372, 412], escape: [352, 464], balance: [296, 486], pallet: [326, 474] };
   SM.MV = MV;
+  /* ---------------- TOURBILLON (aperture at 6, 1 rpm cage, 4 Hz balance) ---------------- */
+  const TB = SM.TB = { cx: CX, cy: 482, r: 36 };
+  SM.tourbillonMarkup = function (finKey) {
+    const p = FIN[finKey] || FIN.steel, { cx, cy, r } = TB;
+    let spoke = '';
+    for (let i = 0; i < 3; i++) spoke += `<path d="M${cx} ${cy} L${f(cx + Math.cos(i * 2.094) * (r - 8))} ${f(cy + Math.sin(i * 2.094) * (r - 8))}" stroke="url(#tb-pol)" stroke-width="3.2" stroke-linecap="round"/>`;
+    let wheel = '';
+    for (let i = 0; i < 20; i++) { const a = i * Math.PI / 10; wheel += `<path d="M${f(cx + Math.cos(a) * 9)} ${f(cy + 8 + Math.sin(a) * 9)} L${f(cx + Math.cos(a + .12) * 11.2)} ${f(cy + 8 + Math.sin(a + .12) * 11.2)}" stroke="#d9c07a" stroke-width="1"/>`; }
+    let spiral = 'M' + cx + ' ' + cy; for (let k = 0; k <= 120; k++) { const a = k / 120 * Math.PI * 2 * 5, rr = 2 + k / 120 * 11; spiral += ` L${f(cx + Math.cos(a) * rr)} ${f(cy + Math.sin(a) * rr)}`; }
+    return `<defs>
+      <radialGradient id="tb-well" cx=".5" cy=".42" r=".6"><stop offset="0" stop-color="#1e2230"/><stop offset=".8" stop-color="#07080c"/><stop offset="1" stop-color="#000"/></radialGradient>
+      <linearGradient id="tb-pol" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${p.hi}"/><stop offset=".45" stop-color="${p.lite}"/><stop offset=".55" stop-color="${p.dark}"/><stop offset="1" stop-color="${p.mid}"/></linearGradient>
+      <linearGradient id="tb-bev" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#000" stop-opacity=".8"/><stop offset=".5" stop-color="#000" stop-opacity=".2"/><stop offset="1" stop-color="#fff" stop-opacity=".45"/></linearGradient>
+    </defs>
+    <circle cx="${cx}" cy="${cy}" r="${r + 3.5}" fill="url(#tb-pol)"/><circle cx="${cx}" cy="${cy}" r="${r + 1.5}" fill="url(#tb-bev)"/>
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="url(#tb-well)"/><circle cx="${cx}" cy="${cy}" r="${r}" fill="url(#p-perlage)" opacity=".35"/>
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#000" stroke-opacity=".7" stroke-width="3" transform="translate(.8 1.4)"/>
+    <g id="tb-cage">
+      <g id="tb-escape">${wheel}<circle cx="${cx}" cy="${cy + 8}" r="1.4" fill="#b0103a"/></g>
+      <circle cx="${cx}" cy="${cy}" r="${r - 6}" fill="none" stroke="url(#tb-pol)" stroke-width="2.6"/>${spoke}
+      <g transform="translate(${cx - 7} ${cy - r + 1}) scale(.14)"><path d="${SM.SHIELD.OUT}" fill="url(#tb-pol)"/><path d="${SM.SHIELD.S}" fill="#c8102e"/></g>
+      <path d="${spiral}" fill="none" stroke="#9fb8ff" stroke-opacity=".75" stroke-width=".45"/>
+      <g id="tb-bal"><circle cx="${cx}" cy="${cy}" r="15" fill="none" stroke="#e8c870" stroke-width="2.2"/><circle cx="${cx}" cy="${cy}" r="15" fill="none" stroke="#fff5c8" stroke-opacity=".6" stroke-width=".5"/>
+        <path d="M${cx - 15} ${cy} L${cx + 15} ${cy} M${cx} ${cy - 15} L${cx} ${cy + 15}" stroke="#d9b45a" stroke-width="1.3"/>
+        ${[0, 90, 180, 270].map(a => { const [x, y] = SM.polar(cx, cy, 15, a + 45); return `<circle cx="${f(x)}" cy="${f(y)}" r="1.5" fill="#f6dc8a"/>`; }).join('')}</g>
+      <circle cx="${cx}" cy="${cy}" r="3" fill="#b0103a"/><circle cx="${cx - .8}" cy="${cy - .8}" r="1" fill="#fff" opacity=".8"/>
+    </g>
+    <path d="${SM.arcPath(cx, cy, r + 2.6, 300, 60)}" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width=".8"/>`;
+  };
+  SM.updateTourbillon = function (root, t, secFrac) {
+    const q = root._tb || (root._tb = { cage: root.querySelector('#tb-cage'), bal: root.querySelector('#tb-bal'), esc: root.querySelector('#tb-escape') });
+    if (!q.cage) return;
+    const { cx, cy } = TB, balA = 210 * Math.sin(t * Math.PI * 2 * 4);
+    q.cage.setAttribute('transform', `rotate(${f(secFrac * 360)} ${cx} ${cy})`);
+    q.bal.setAttribute('transform', `rotate(${f(balA)} ${cx} ${cy})`);
+    q.esc.setAttribute('transform', `rotate(${f(Math.floor(t * 8) * 18)} ${cx} ${cy + 8})`);
+  };
   SM.movementMarkup = function () {
     const wheel = (id, [x, y], t, ro, rr, w, fill, club) => `<g id="${id}"><path d="${gearPath(x, y, t, ro, rr, w, club)}" fill="${fill}" fill-rule="evenodd" stroke="#3a2604" stroke-width=".5"/><circle cx="${x}" cy="${y}" r="${ro * .2}" fill="url(#mv-steel)"/></g>`;
     let spiral = '';

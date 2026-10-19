@@ -1,7 +1,7 @@
 {
   "name": "Nick's Superman Watch",
   "short_name": "Superman Watch",
-  "description": "A detailed interactive Superman wristwatch with chronograph, timer, alarms, world time and super powers.",
+  "description": "A detailed interactive Superman wristwatch: 20 faces, face builder, 3D S-shield hologram, weather, tide and activity complications, chronograph, alarms and super powers.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

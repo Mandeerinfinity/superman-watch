@@ -290,4 +290,42 @@
     th.connect(tg); tg.connect(o); th.start(t + 1.1); th.stop(t + 2.7);
     [60, 64, 67, 72, 76].forEach((n, i) => bell(t + 1.15 + i * .05, N(n + 12), o, .6, 2.6));
   };
+
+  /* ---------- v3: hologram activate, variant switch, Solar game ---------- */
+  A.holo = function (small) {
+    if (!A.can('powers')) return;
+    const c = A.ctx, t = c.currentTime + .01, o = out('powers', .45);
+    if (small) { /* variant switch: quick digital chirp pair */
+      tone(t, 1760, .05, o, 'square', .03, .002, .05); tone(t + .06, 2637, .06, o, 'sine', .08, .002, .12); return;
+    }
+    /* power-up sweep: detuned saws through a rising resonant low-pass */
+    const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.Q.value = 9; lp.frequency.setValueAtTime(180, t); lp.frequency.exponentialRampToValueAtTime(5200, t + .55); lp.frequency.exponentialRampToValueAtTime(1400, t + 1.3);
+    const g = c.createGain(); g.gain.setValueAtTime(.0001, t); g.gain.linearRampToValueAtTime(.16, t + .08); g.gain.exponentialRampToValueAtTime(.0001, t + 1.5);
+    lp.connect(g); g.connect(o);
+    [-9, 0, 7].forEach(dt => { const os = c.createOscillator(); os.type = 'sawtooth'; os.frequency.setValueAtTime(N(45), t); os.frequency.exponentialRampToValueAtTime(N(57), t + .5); os.detune.value = dt; os.connect(lp); os.start(t); os.stop(t + 1.6); });
+    /* shimmer: fast arpeggio of glassy partials */
+    [76, 83, 88, 95, 100].forEach((n, i) => { tone(t + .32 + i * .055, N(n), .5, o, 'sine', .07, .003, .7); tone(t + .32 + i * .055, N(n) * 2.01, .3, o, 'sine', .02, .003, .4); });
+    /* data crackle */
+    for (let i = 0; i < 7; i++) noise(t + .2 + Math.random() * .9, .02, o, 'bandpass', 3000 + Math.random() * 5000, 8, .12, .001, .03);
+    /* sub thump when the shield locks in */
+    const th = c.createOscillator(), tg = c.createGain(); th.frequency.setValueAtTime(110, t + .55); th.frequency.exponentialRampToValueAtTime(40, t + 1.1);
+    tg.gain.setValueAtTime(.0001, t + .55); tg.gain.linearRampToValueAtTime(.35, t + .57); tg.gain.exponentialRampToValueAtTime(.0001, t + 1.2);
+    th.connect(tg); tg.connect(o); th.start(t + .55); th.stop(t + 1.3);
+  };
+  A.collect = function (combo) {
+    if (!A.can('ui')) return;
+    const t = A.ctx.currentTime + .005, o = out('ui', .25), n = 79 + Math.min(12, combo || 0);
+    tone(t, N(n), .08, o, 'triangle', .22, .002, .12); tone(t + .045, N(n + 7), .1, o, 'sine', .16, .002, .18);
+  };
+  A.bad = function () {
+    if (!A.can('ui')) return;
+    const c = A.ctx, t = c.currentTime + .005, o = out('ui', .15), os = c.createOscillator(), g = c.createGain();
+    os.type = 'square'; os.frequency.setValueAtTime(220, t); os.frequency.exponentialRampToValueAtTime(70, t + .25);
+    g.gain.setValueAtTime(.12, t); g.gain.exponentialRampToValueAtTime(.0001, t + .3); os.connect(g); g.connect(o); os.start(t); os.stop(t + .32);
+  };
+  A.gameEnd = function (good) {
+    if (!A.can('ui')) return;
+    const t = A.ctx.currentTime + .02, o = out('ui', .5);
+    (good ? [72, 76, 79, 84] : [72, 70, 67]).forEach((n, i) => bell(t + i * .12, N(n), o, .8, 1.6));
+  };
 })(window.SM);

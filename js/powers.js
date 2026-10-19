@@ -9,7 +9,7 @@
     addEventListener('resize', P.resize);
   };
   P.resize = function () {
-    if (!fx) return; const r = Math.min(1.5, devicePixelRatio || 1);
+    if (!fx) return; const r = Math.min(SM.Q ? Math.min(1.5, SM.Q.p().bgScale) : 1.5, devicePixelRatio || 1);
     W = fx.clientWidth; H = fx.clientHeight; fx.width = Math.round(W * r); fx.height = Math.round(H * r); fctx.setTransform(r, 0, 0, r, 0, 0);
   };
   /* glass centre + radius in fx-canvas coords */
@@ -185,6 +185,7 @@
       else if (p.k === 'mist') { p.s += 1.2; const g = fctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.s); g.addColorStop(0, `rgba(210,240,255,${(p.life * .35).toFixed(2)})`); g.addColorStop(1, 'rgba(210,240,255,0)'); fctx.fillStyle = g; fctx.beginPath(); fctx.arc(p.x, p.y, p.s, 0, 6.283); fctx.fill(); }
       out.push(p);
     }
-    P.parts = out.length > 900 ? out.slice(-900) : out;
+    const cap = Math.round(900 * (SM.Q ? SM.Q.p().particles : 1));
+    P.parts = out.length > cap ? out.slice(-cap) : out;
   };
 })(window.SM);

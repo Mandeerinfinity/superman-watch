@@ -1,4 +1,4 @@
-/* Dial toolkit + 14 watch faces */
+/* Dial toolkit + 20 watch faces (v3 adds Bizarro, Phantom Zone, Tourbillon, Clark Kent, Hologram Command, Metropolis Harbor + the Face Builder) */
 (function (SM) {
   'use strict';
   const CX = 300, CY = 400, f = SM.f;
@@ -105,12 +105,12 @@
   /* subdials */
   K.sub = function (ctx, type, cx, cy, r, st = {}) {
     const i = ctx.subs.length;
-    ctx.subs.push({ type, cx, cy, r, hand: !['moon', 'datebig'].includes(type), handColor: st.hand });
+    ctx.subs.push({ type, cx, cy, r, hand: !['moon', 'datebig', 'weather', 'rings', 'vitals', 'cal'].includes(type), handColor: st.hand });
     const ink = st.ink || '#1b2238', ring = st.ring || '#c9d0da';
     const pol = (rr, a) => SM.polar(cx, cy, rr, a);
     let g = `<circle cx="${cx}" cy="${cy}" r="${r + 1.8}" fill="#000" opacity=".35" transform="translate(-.6 -.9)"/>
-      <circle cx="${cx}" cy="${cy}" r="${r}" fill="${st.bg || '#e8ecf1'}"/>`;
-    if (st.tex !== false) g += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="url(#${st.tex || 'p-snail'})" opacity="${st.texOp || .9}" style="mix-blend-mode:${st.texBlend || 'overlay'}"/>`;
+      <circle cx="${cx}" cy="${cy}" r="${r}" fill="${st.bg || (['vitals', 'rings', 'weather'].includes(type) ? '#080b12' : '#e8ecf1')}"/>`;
+    if (st.tex !== false && !['vitals', 'rings', 'weather', 'tide', 'cal'].includes(type)) g += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="url(#${st.tex || 'p-snail'})" opacity="${st.texOp || .9}" style="mix-blend-mode:${st.texBlend || 'overlay'}"/>`;
     g += `<circle cx="${cx}" cy="${cy}" r="${r - 1.2}" fill="none" stroke="#000" stroke-opacity=".45" stroke-width="2.4" transform="translate(.7 1)"/>
       <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${ring}" stroke-width="${st.ringW || 1.5}"/>`;
     const tick = (a, l, w) => { const [x0, y0] = pol(r - 2, a), [x1, y1] = pol(r - 2 - l, a); return `<line x1="${f(x0)}" y1="${f(y0)}" x2="${f(x1)}" y2="${f(y1)}" stroke="${ink}" stroke-width="${w}"/>`; };
@@ -146,7 +146,61 @@
       g += K.text(cx, cy + 7, '28', { size: 21, fill: ink, font: st.font || F.serif, weight: 800, bind: 'date' });
       g += K.text(cx, cy - r * .5, st.label || 'EDITION', { size: 4.6, fill: ink, ls: 1.2, weight: 700 });
     }
-    if (st.label && !['pwr', 'gauge', 'moon', 'datebig'].includes(type)) g += K.text(cx, cy + r * .48, st.label, { size: 4.6, fill: ink, ls: .8, weight: 600 });
+    else if (type === 'weather') {
+      g += `<circle cx="${cx}" cy="${cy}" r="${r - 3.5}" fill="none" stroke="${ink}" stroke-opacity=".25" stroke-width=".6"/>`;
+      for (let k = 0; k < 24; k++) g += tick(k * 15, k % 6 ? 1.4 : 2.6, k % 6 ? .35 : .7);
+      g += `<g data-wx="icon" data-s="${f(r / 34)}" transform="translate(${cx} ${f(cy - r * .24)})"></g>`;
+      g += `<text data-wx="temp" x="${cx}" y="${f(cy + r * .38)}" font-size="${f(r * .34)}" fill="${ink}" font-weight="700" text-anchor="middle" font-family="${F.cond}">--°</text>`;
+      g += `<text data-wx="hilo" x="${cx}" y="${f(cy + r * .62)}" font-size="${f(r * .13)}" fill="${ink}" opacity=".8" font-weight="600" letter-spacing=".3" text-anchor="middle" font-family="${F.cond}">NO DATA</text>`;
+      g += K.text(cx, cy - r * .64, st.label || 'WEATHER', { size: r * .12, fill: ink, ls: .6, weight: 700, op: .85 });
+    }
+    else if (type === 'rings') {
+      const RC = [['move', '#ff3b50'], ['solar', '#ffd34a'], ['focus', '#3fe0ff']], w = Math.max(3, r * .15);
+      RC.forEach(([k, c], j) => {
+        const rr = r - 4 - j * (w + 1.2);
+        g += `<circle cx="${cx}" cy="${cy}" r="${f(rr)}" fill="none" stroke="${c}" stroke-opacity=".2" stroke-width="${f(w)}"/>
+          <path data-ring="${k}" data-cx="${cx}" data-cy="${cy}" data-r="${f(rr)}" d="" fill="none" stroke="${c}" stroke-width="${f(w)}" stroke-linecap="round"/>`;
+      });
+      const cr = r - 4 - 3 * (w + 1.2) + w * .2;
+      g += `<circle cx="${cx}" cy="${cy}" r="${f(cr)}" fill="${st.core || '#0b0f18'}"/>` + SM.shield(cx, cy - cr * .05, cr * 1.3, st.shield || 'classic');
+    }
+    else if (type === 'tide') {
+      const cid = SM.uid('tc'), wid = SM.uid('tw');
+      g += `<clipPath id="${cid}"><circle cx="${cx}" cy="${cy}" r="${r - 3}"/></clipPath>
+        <linearGradient id="${wid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${st.water || '#2f8fe8'}"/><stop offset="1" stop-color="#062a5a"/></linearGradient>
+        <g clip-path="url(#${cid})"><circle cx="${cx}" cy="${cy}" r="${r}" fill="${st.sky || '#0b1a38'}"/>
+        <g data-tidefill="1" data-cy="${cy}" data-r="${r}" transform="translate(0 ${r * .2})"><path d="M${cx - r * 1.4} ${cy} q${f(r * .175)} ${-r * .09} ${f(r * .35)} 0 t${f(r * .35)} 0 t${f(r * .35)} 0 t${f(r * .35)} 0 t${f(r * .35)} 0 t${f(r * .35)} 0 t${f(r * .35)} 0 t${f(r * .35)} 0 V${cy + r * 2} H${cx - r * 1.4} Z" fill="url(#${wid})" opacity=".92"/>
+        <path d="M${cx - r * 1.4} ${cy} q${f(r * .175)} ${-r * .09} ${f(r * .35)} 0 t${f(r * .35)} 0 t${f(r * .35)} 0 t${f(r * .35)} 0 t${f(r * .35)} 0 t${f(r * .35)} 0 t${f(r * .35)} 0 t${f(r * .35)} 0" fill="none" stroke="#bfe6ff" stroke-opacity=".7" stroke-width=".8"/></g></g>`;
+      for (let k = 0; k < 24; k++) g += tick(k * 15, k % 6 ? 1.6 : 3.2, k % 6 ? .4 : .9);
+      g += K.text(cx, cy - r + 10, 'HIGH', { size: r * .13, fill: st.ink || '#dff1ff', ls: .5, weight: 700 }) + K.text(cx, cy + r - 5.5, 'LOW', { size: r * .13, fill: st.ink || '#dff1ff', ls: .5, weight: 700 });
+      g += K.text(cx - r * .62, cy + 1.6, 'EBB', { size: r * .1, fill: st.ink || '#dff1ff', op: .7 }) + K.text(cx + r * .62, cy + 1.6, 'FLOOD', { size: r * .1, fill: st.ink || '#dff1ff', op: .7 });
+      g += K.text(cx, cy + r * .42, st.label || 'HARBOR TIDE', { size: r * .11, fill: st.ink || '#dff1ff', ls: .6, weight: 700, op: .9 });
+    }
+    else if (type === 'vitals') {
+      const sw = r * 1.56, sh = r * .74, x0 = cx - sw / 2, y0 = cy - sh * .48, col = st.accent || '#ff3b50';
+      g += `<rect x="${f(x0)}" y="${f(y0)}" width="${f(sw)}" height="${f(sh)}" rx="3" fill="#04070b" stroke="${col}" stroke-opacity=".35" stroke-width=".6"/>`;
+      for (let k = 1; k < 8; k++) g += `<line x1="${f(x0 + sw * k / 8)}" y1="${f(y0)}" x2="${f(x0 + sw * k / 8)}" y2="${f(y0 + sh)}" stroke="${col}" stroke-opacity=".12" stroke-width=".3"/>`;
+      for (let k = 1; k < 4; k++) g += `<line x1="${f(x0)}" y1="${f(y0 + sh * k / 4)}" x2="${f(x0 + sw)}" y2="${f(y0 + sh * k / 4)}" stroke="${col}" stroke-opacity=".12" stroke-width=".3"/>`;
+      const base = y0 + sh * .72, amp = sh * .62;
+      g += `<path data-ecg="1" data-x="${f(x0 + 1)}" data-y="${f(base)}" data-w="${f(sw - 2)}" data-h="${f(amp)}" d="" fill="none" stroke="${col}" stroke-opacity=".35" stroke-width="2.4" stroke-linejoin="round"/>`;
+      g += `<path data-ecg="1" data-x="${f(x0 + 1)}" data-y="${f(base)}" data-w="${f(sw - 2)}" data-h="${f(amp)}" d="" fill="none" stroke="${st.trace || '#ffd0d6'}" stroke-width=".9" stroke-linejoin="round"/>`;
+      const hy = cy + r * .5;
+      g += `<path data-beat="1" transform="translate(${f(cx - r * .42)} ${f(hy - 2.2)}) scale(${f(r / 60)})" d="M0 4 C-4 0 -8 -1 -8 -5 C-8 -8 -4 -9 0 -6 C4 -9 8 -8 8 -5 C8 -1 4 0 0 4 Z" fill="${col}"/>`;
+      g += `<text data-bind="bpm" x="${f(cx + r * .02)}" y="${f(hy + 1.5)}" font-size="${f(r * .27)}" fill="${st.ink || '#ffe3e6'}" font-weight="700" text-anchor="middle" font-family="${F.cond}">52</text>`;
+      g += K.text(cx + r * .45, hy + 1.2, 'BPM', { size: r * .11, fill: st.ink || '#ffe3e6', weight: 700, op: .8 });
+      g += K.text(cx, cy - r * .62, st.label || 'KRYPTONIAN VITALS', { size: r * .105, fill: st.ink || '#ffe3e6', ls: .5, weight: 700, op: .9 });
+    }
+    else if (type === 'cal') {
+      const M = SM.cx.monthMatrix(new Date()), cw = r * 1.52 / 7, rows = M.cells.length / 7, ch = Math.min(cw * .92, r * 1.12 / rows), x0 = cx - cw * 3.5, y0 = cy - r * .36;
+      g += K.text(cx, cy - r * .56, SM.MONTHS[M.m].toUpperCase() + ' ' + M.y, { size: r * .135, fill: ink, ls: .8, weight: 700 });
+      'SMTWTFS'.split('').forEach((d, k) => { g += K.text(x0 + cw * (k + .5), y0, d, { size: r * .1, fill: k === 0 ? (st.accent || '#c0182a') : ink, weight: 700, op: .75 }); });
+      M.cells.forEach((d, k) => {
+        if (!d) return; const x = x0 + cw * (k % 7 + .5), y = y0 + ch * (Math.floor(k / 7) + 1) + ch * .15;
+        if (d === M.today) g += `<circle cx="${f(x)}" cy="${f(y - r * .035)}" r="${f(ch * .52)}" fill="${st.accent || '#c0182a'}"/>`;
+        g += K.text(x, y, d, { size: r * .105, fill: d === M.today ? '#fff' : ink, weight: d === M.today ? 800 : 600 });
+      });
+    }
+    if (st.label && !['pwr', 'gauge', 'moon', 'datebig', 'weather', 'rings', 'tide', 'vitals', 'cal'].includes(type)) g += K.text(cx, cy + r * .48, st.label, { size: 4.6, fill: ink, ls: .8, weight: 600 });
     return g;
   };
   K.dateWin = function (x, y, w, h, st = {}) {
@@ -533,6 +587,219 @@
     }
   });
 
+  /* ================= v3 faces ================= */
+  def({
+    id: 'bizarro', name: 'Bizarro World', desc: 'Everything backwards · hands run counter-clockwise', finish: 'titanium', reverse: true,
+    bezel: { type: 'engraved', text: 'OPPOSITE · DAY · GOODBYE · IS · HELLO · UP · IS · DOWN · ' + 'OPPOSITE · DAY · GOODBYE · IS · HELLO ·', ink: '#1f2a24' },
+    hands: { style: 'cartoon', metal: 'black', lume: '#d7ffe0', sec: '#b8ff3a', counter: 'dot', subColor: '#b8ff3a', hourL: 80, minL: 122, hourW: 12, minW: 9 },
+    lume: '#c8ff6a',
+    render(ctx) {
+      const u = SM.uid('bz');
+      let g = K.base('#8b9a92') + K.rehaut({ color: ['#c9d6cf', '#6d7a73'], ink: '#1f2a24', type: 'minutes' });
+      g += `<g transform="translate(600 0) scale(-1 1)">`;
+      g += K.radial(u + 'g', [[0, '#d4dfd8'], [.55, '#a6b5ad'], [1, '#6f7e76']], .45, .4, .65);
+      g += K.disc(`url(#${u}g)`) + K.disc('url(#p-facets)', .35, 'multiply') + K.disc('url(#p-grain)', .5, 'overlay');
+      /* cracked chalk: jagged lines */
+      const r = SM.rng(404); let cr = '';
+      for (let i = 0; i < 9; i++) { let [x, y] = SM.polar(CX, CY, 60 + r() * 80, r() * 360), d = `M${f(x)} ${f(y)}`; for (let k = 0; k < 5; k++) { x += (r() - .5) * 26; y += (r() - .5) * 26; d += ` L${f(x)} ${f(y)}`; } cr += d + ' '; }
+      g += `<path d="${cr}" fill="none" stroke="#2b3530" stroke-opacity=".45" stroke-width=".8" clip-path="url(#dial-clip)"/>`;
+      g += K.dome(.5);
+      g += `</g>`;
+      g += K.track(141, '#27322c', 'ticks');
+      /* numerals run counter-clockwise and are mirrored */
+      for (let h = 0; h < 12; h++) {
+        const [x, y] = SM.polar(CX, CY, 117, -h * 30), s = h === 0 ? 12 : h;
+        g += `<g transform="translate(${f(2 * x)} 0) scale(-1 1)">${K.text(x + 1, y + 7.6, s, { size: 20, fill: '#000', op: .35, font: F.ui, weight: 700 })}${K.text(x, y + 6.6, s, { size: 20, fill: '#1c2621', font: F.ui, weight: 700, cls: 'lume' })}</g>`;
+      }
+      g += `<g transform="translate(600 0) scale(-1 1)">${SM.shield(300, 322, 62, 'kryptonite')}${K.text(300, 362, 'BIZARRO', { size: 10, fill: '#1c2621', ls: 3, weight: 700, font: F.ui })}${K.text(300, 373, 'NUMBER ONE · MADE IN HTRAE', { size: 4.4, fill: '#2b3530', ls: 1.2 })}</g>`;
+      g += K.sub(ctx, 'vitals', 300, 468, 34, { accent: '#b8ff3a', trace: '#efffcf', ink: '#1c2621', label: 'BIZARRO PULSE' });
+      return g;
+    }
+  });
+
+  def({
+    id: 'phantom', name: 'Phantom Zone', desc: 'Spinning prison pane · vortex · Kryptonian vitals', finish: 'black',
+    bezel: { type: 'glyph', color: ['#171126', '#07040f'], ink: '#b9a7ff' },
+    hands: { style: 'sword', metal: 'white', lume: '#e2d9ff', sec: '#b39bff', counter: 'dot', subColor: '#b39bff', hourL: 84, minL: 126 },
+    lume: '#b39bff',
+    render(ctx) {
+      const u = SM.uid('pz');
+      let g = K.base('#07040f') + K.rehaut({ color: ['#2a2045', '#07040f'], ink: '#cbbcff', type: 'glyph' });
+      g += K.radial(u + 'g', [[0, '#2a1d58'], [.35, '#120b2a'], [.8, '#06030e'], [1, '#020106']]);
+      g += K.disc(`url(#${u}g)`);
+      for (let i = 0; i < 14; i++) g += `<circle cx="300" cy="400" r="${f(12 + i * 9.6)}" fill="none" stroke="#9d86ff" stroke-opacity="${f(.05 + (i % 3 === 0 ? .1 : 0))}" stroke-width="${i % 3 === 0 ? .9 : .5}" stroke-dasharray="${f(2 + i)} ${f(3 + i * .7)}"/>`;
+      g += K.disc('url(#p-grain)', .35, 'overlay');
+      g += K.indices({ type: 'baton', r0: 118, r1: 136, w: 3.2, metal: 'white', lume: '#d9ceff', twelve: 'triangle', shadow: .6 });
+      g += K.text(300, 300, 'PHANTOM ZONE', { size: 8, fill: '#d9ceff', ls: 3.2, weight: 700 });
+      g += K.text(300, 310, 'CONTAINMENT CHRONOMETER', { size: 4.2, fill: '#a797e6', ls: 1.4 });
+      g += K.sub(ctx, 'vitals', 300, 478, 32, { accent: '#b39bff', trace: '#efe9ff', ink: '#e9e2ff', label: 'PRISONER VITALS' });
+      g += K.sub(ctx, 'sec', 228, 410, 22, { bg: '#0d0820', tex: false, ink: '#cbbcff', ring: '#5a4a9a', hand: '#b39bff' });
+      g += K.sub(ctx, '24h', 372, 410, 22, { bg: '#0d0820', tex: false, ink: '#cbbcff', ring: '#5a4a9a', hand: '#b39bff' });
+      return g;
+    },
+    /* the spinning pane is composited separately (CSS transform) so the dial never repaints for it */
+    anim() {
+      const u = SM.uid('pa'), s = 70;
+      const pane = (k, op) => `<g transform="rotate(${k * 45} 300 400)"><rect x="${300 - s * (1 - k * .18)}" y="${400 - s * (1 - k * .18)}" width="${2 * s * (1 - k * .18)}" height="${2 * s * (1 - k * .18)}" fill="url(#${u})" stroke="#e6ddff" stroke-opacity="${op}" stroke-width="1"/></g>`;
+      return [{ cls: 'spin', dur: 24, markup: `<defs><linearGradient id="${u}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e6ddff" stop-opacity=".22"/><stop offset=".45" stop-color="#9d86ff" stop-opacity=".05"/><stop offset=".55" stop-color="#fff" stop-opacity=".16"/><stop offset="1" stop-color="#6d58d8" stop-opacity=".04"/></linearGradient></defs>
+        <g transform="translate(300 400) scale(1 .96) translate(-300 -400)">${pane(0, .55)}${pane(1, .3)}</g>
+        <g opacity=".85">${SM.shield(300, 400, 34, 'crystal')}</g>` }];
+    }
+  });
+
+  def({
+    id: 'tourbillon', name: 'Kryptonian Tourbillon', desc: 'Flying tourbillon at 6 · open-worked bridges · power reserve', finish: 'rose', tourbillon: true,
+    bezel: { type: 'smooth' },
+    hands: { style: 'leaf', metal: 'rose', lume: '#fff', sec: '#b8743d', counter: 'dot', subColor: '#b8743d', hourL: 84, minL: 126, hourW: 12, minW: 9, seconds: false },
+    lume: '#ffe9d0',
+    render(ctx) {
+      const u = SM.uid('tb');
+      let g = K.base('#15171c') + K.rehaut({ color: ['#e9d2c0', '#8a6a55'], ink: '#3a2418', type: 'fifths' });
+      g += K.disc('#23262d') + K.disc('url(#p-geneva)', .55, 'overlay');
+      /* skeleton bridges (polished bevels) */
+      g += K.linear(u + 'b', [[0, '#f3dccb'], [.5, '#b8866a'], [1, '#6b4632']], 1, 1);
+      const br = (d) => `<path d="${d}" fill="url(#${u}b)"/><path d="${d}" fill="url(#p-perlage)" opacity=".45" style="mix-blend-mode:multiply"/><path d="${d}" fill="none" stroke="url(#${u}b)" stroke-width="2.4"/><path d="${d}" fill="none" stroke="#000" stroke-opacity=".5" stroke-width=".5" transform="translate(.6 .9)"/>`;
+      g += br('M196 330 Q240 300 300 296 Q360 300 404 330 L392 346 Q350 318 300 316 Q250 318 208 346 Z');
+      g += br('M214 432 Q236 470 262 478 L270 462 Q248 452 230 424 Z') + br('M386 432 Q364 470 338 478 L330 462 Q352 452 370 424 Z');
+      for (let i = 0; i < 5; i++) { const [x, y] = SM.polar(300, 400, 94, 220 + i * 22); g += `<circle cx="${f(x)}" cy="${f(y)}" r="3.2" fill="#b0103a"/><circle cx="${f(x - .8)}" cy="${f(y - .8)}" r="1" fill="#fff" opacity=".7"/><circle cx="${f(x)}" cy="${f(y)}" r="4.4" fill="none" stroke="url(#${u}b)" stroke-width="1.4"/>`; }
+      /* sapphire chapter ring */
+      g += `<circle cx="300" cy="400" r="137" fill="none" stroke="#fff" stroke-opacity=".08" stroke-width="18"/>`;
+      g += K.numerals({ roman: true, r: 128, size: 11, fill: '#f2dccb', font: F.roman, weight: 700, hours: [0, 1, 2, 3, 4, 5, 7, 8, 9, 10, 11], applied: true });
+      g += K.track(143, 'rgba(242,220,203,.7)', 'dots', .7);
+      g += SM.shield(300, 360, 40, 'gold');
+      g += K.text(300, 388, 'TOURBILLON', { size: 6.5, fill: '#f2dccb', ls: 3, weight: 700, font: F.roman });
+      g += K.sub(ctx, 'pwr', 238, 408, 22, { bg: '#1b1d23', tex: false, ink: '#f2dccb', ring: '#b8866a', hand: '#e7b48e', accent: '#ffd34a', label: 'SOLAR' });
+      g += K.sub(ctx, '24h', 362, 408, 22, { bg: '#1b1d23', tex: false, ink: '#f2dccb', ring: '#b8866a', hand: '#e7b48e' });
+      return g;
+    }
+  });
+
+  def({
+    id: 'clark', name: 'Clark Kent', desc: 'Reporter\'s dress watch · enamel · calendar · hidden S', finish: 'gold',
+    bezel: { type: 'smooth' },
+    hands: { style: 'leaf', metal: 'blued', lume: '#fff', sec: '#1d3f9a', counter: 'dot', subColor: '#1d3f9a', hourL: 82, minL: 128, hourW: 11, minW: 8 },
+    lume: '#bfe0ff',
+    render(ctx) {
+      const u = SM.uid('ck');
+      let g = K.base('#efe6d2') + K.rehaut({ color: ['#fbf6ea', '#cfc3a8'], ink: '#3a3226', type: 'minutes' });
+      g += K.radial(u + 'g', [[0, '#fffdf6'], [.7, '#f4ecda'], [1, '#e1d4b8']], .45, .38, .7);
+      g += K.disc(`url(#${u}g)`) + K.disc('url(#p-paper)', .25, 'multiply') + K.disc('url(#p-grain)', .3, 'overlay') + K.dome(.5);
+      g += K.track(142, '#2a241c', 'rail');
+      g += K.numerals({ roman: true, r: 118, size: 15, fill: '#1c1812', font: F.roman, weight: 700, hours: [1, 2, 3, 4, 5, 7, 8, 9, 10, 11] });
+      /* the "shirt rip" at 12: collar + tie pulled open over the S */
+      g += `<g transform="translate(300 302) scale(1.25)">
+        <path d="M-24 -14 L24 -14 L24 18 L-24 18 Z" fill="#c8102e"/>${SM.shield(0, 4, 36, 'classic')}
+        <path d="M-26 -16 L-6 -16 L-2 24 L-14 26 L-26 10 Z" fill="#fbfbf8" stroke="#b9b2a2" stroke-width=".6"/>
+        <path d="M26 -16 L6 -16 L2 24 L14 26 L26 10 Z" fill="#fbfbf8" stroke="#b9b2a2" stroke-width=".6"/>
+        <path d="M-6 -16 L0 -8 L-10 -2 Z M6 -16 L0 -8 L10 -2 Z" fill="#e9e6de" stroke="#b9b2a2" stroke-width=".5"/>
+        <path d="M-2.5 -9 L2.5 -9 L4 12 L0 17 L-4 12 Z" fill="#2a3a6a" transform="rotate(18 0 0) translate(9 2)"/>
+      </g>`;
+      g += K.text(300, 352, 'CLARK KENT', { size: 7.5, fill: '#1c1812', ls: 3, weight: 700, font: F.serif });
+      g += K.text(300, 362, 'DAILY PLANET · REPORTER\'S EDITION', { size: 3.9, fill: '#5a4f3e', ls: 1.1 });
+      g += K.sub(ctx, 'cal', 300, 462, 46, { bg: '#fbf6ea', tex: false, ink: '#2a241c', ring: '#b6a887', accent: '#c0182a' });
+      return g;
+    }
+  });
+
+  def({
+    id: 'hologram', name: 'Hologram Command', desc: 'Projector dial · 3D S shield hologram · weather + activity', finish: 'titanium', holo: true,
+    bezel: { type: 'hours24', color: ['#0c1a24', '#03080c'], ink: '#7fe8ff' },
+    hands: { style: 'glow', metal: 'cyan', lume: '#bff6ff', sec: '#3fe0ff', counter: 'dot', subColor: '#3fe0ff', hourL: 82, minL: 126 },
+    lume: '#5fe8ff',
+    render(ctx) {
+      const u = SM.uid('hc');
+      let g = K.base('#03080c') + K.rehaut({ color: ['#123244', '#03080c'], ink: '#7fe8ff', type: 'fifths' });
+      g += K.radial(u + 'g', [[0, '#0e3448'], [.45, '#071a26'], [1, '#02070b']]);
+      g += K.disc(`url(#${u}g)`) + K.disc('url(#p-carbon)', .35, 'screen') + K.disc('url(#p-holo)', .9);
+      for (let i = 0; i < 4; i++) g += `<circle cx="300" cy="400" r="${38 + i * 26}" fill="none" stroke="#3fe0ff" stroke-opacity="${f(.28 - i * .05)}" stroke-width=".7" stroke-dasharray="${i % 2 ? '1 3' : '14 4 2 4'}"/>`;
+      g += K.track(142, 'rgba(127,232,255,.8)', 'ticks', .6);
+      g += K.indices({ type: 'baton', r0: 120, r1: 136, w: 3, metal: 'cyan', flat: '#7fe8ff', lume: '#bff6ff', twelve: 'double', skip: [3, 9], shadow: .6 });
+      /* projector lens */
+      g += K.radial(u + 'l', [[0, '#e9fdff'], [.2, '#7fe8ff'], [.5, '#0f5a78'], [.8, '#06202e'], [1, '#02080c']]);
+      g += `<circle cx="300" cy="400" r="22" fill="#000" opacity=".5" transform="translate(1 2)"/><circle cx="300" cy="400" r="21" fill="url(#${u}l)"/><circle cx="300" cy="400" r="21" fill="none" stroke="#9aa6b0" stroke-width="2.2"/>
+        <circle cx="300" cy="400" r="16" fill="none" stroke="#3fe0ff" stroke-opacity=".6" stroke-width=".6"/><ellipse cx="294" cy="393" rx="5" ry="3" fill="#fff" opacity=".6" transform="rotate(-30 294 393)"/>`;
+      g += K.text(300, 322, 'HOLOGRAM', { size: 8, fill: '#9ff0ff', ls: 3.6, weight: 700, font: F.ui });
+      g += K.text(300, 332, 'FORTRESS COMMAND · 3D S', { size: 4.2, fill: '#5fc8e0', ls: 1.3 });
+      g += K.sub(ctx, 'weather', 222, 400, 30, { bg: '#051620', tex: false, ink: '#bff6ff', ring: '#1f6f8a' });
+      g += K.sub(ctx, 'rings', 378, 400, 30, { bg: '#051620', tex: false, ink: '#bff6ff', ring: '#1f6f8a', core: '#03080c', shield: 'ice' });
+      g += K.text(300, 500, 'TAP ◈ TO SPIN THE SHIELD', { size: 4, fill: '#5fc8e0', ls: 1.2, op: .8 });
+      return g;
+    }
+  });
+
+  def({
+    id: 'harbor', name: 'Metropolis Harbor', desc: 'Tide gauge · live weather · moon · lighthouse', finish: 'steel',
+    bezel: { type: 'diver', color: ['#0d2a4a', '#04111f'], ink: '#e6f1ff', lume: '#bfe6ff' },
+    hands: { style: 'sword', metal: 'white', lume: '#e8fff0', sec: '#ff5a3a', counter: 'shield', subColor: '#ff5a3a', hourL: 82, minL: 126 },
+    lume: '#9dffb0',
+    render(ctx) {
+      const u = SM.uid('hb');
+      let g = K.base('#06182e') + K.rehaut({ color: ['#e6eef7', '#8a9bb0'], ink: '#0d2a4a', type: 'minutes' });
+      g += K.radial(u + 'g', [[0, '#1f5a9a'], [.6, '#0d3160'], [1, '#051a36']], .5, .35, .7);
+      g += K.disc(`url(#${u}g)`) + K.disc('url(#p-barley)', .75, 'overlay') + K.dome(.8);
+      /* engraved lighthouse at 12 */
+      g += `<g transform="translate(300 318)" opacity=".95"><path d="M-5 16 L-3.2 -8 L3.2 -8 L5 16 Z" fill="#e6f1ff"/><rect x="-3.2" y="-2" width="6.4" height="3" fill="#ff5a3a"/><rect x="-3.2" y="6" width="6.4" height="3" fill="#ff5a3a"/><rect x="-4" y="-12" width="8" height="4" fill="#ffd34a"/><path d="M-4.6 -12 L0 -16 L4.6 -12 Z" fill="#e6f1ff"/>
+        <path d="M4 -10 L34 -18 L34 -2 Z" fill="#ffd34a" opacity=".22"/><path d="M-4 -10 L-34 -18 L-34 -2 Z" fill="#ffd34a" opacity=".12"/><path d="M-30 17 Q-15 13 0 17 T30 17" fill="none" stroke="#9fd0ff" stroke-width="1"/></g>`;
+      g += K.indices({ type: 'wedge', r0: 110, r1: 136, w: 9, metal: 'white', lume: '#e8fff0', twelve: 'triangle', skip: [0, 3, 6, 9], shadow: .45 });
+      g += K.text(300, 350, 'METROPOLIS HARBOR', { size: 6.5, fill: '#e6f1ff', ls: 2.4, weight: 700 });
+      g += K.text(300, 359, 'TIDE MASTER · 300 M', { size: 4.2, fill: '#9fc4ea', ls: 1.4 });
+      g += K.sub(ctx, 'tide', 300, 468, 36, { sky: '#081a33', ink: '#dff1ff', ring: '#9fb9d4', hand: '#ff5a3a' });
+      g += K.sub(ctx, 'weather', 224, 404, 28, { bg: '#0a2544', tex: false, ink: '#e6f1ff', ring: '#9fb9d4' });
+      g += K.sub(ctx, 'moon', 376, 404, 28, { bg: '#0a2544', ring: '#9fb9d4', ink: '#e6f1ff', label: 'MOON' });
+      return g;
+    }
+  });
+
+  /* ---------------- Face Builder ---------------- */
+  const CUSTOM_DEFAULT = { name: 'Nick\'s Build', dial: '#1846a6', tex: 'sunburst', hands: 'dauphine', metal: 'steel', idx: 'baton', shield: 'classic', left: 'sec', right: 'chr30', bottom: 'weather', bezel: 'tachy', bezelColor: '#0d1c3f', lume: '#9dffb0', sec: '#e3202f', finish: 'steel' };
+  SM.CUSTOM_DEFAULT = CUSTOM_DEFAULT;
+  SM.BUILDER = {
+    tex: [['sunburst', 'Sunburst'], ['guilloche', 'Guilloché'], ['barley', 'Barleycorn'], ['brushR', 'Brushed'], ['carbon', 'Carbon'], ['facets', 'Crystal'], ['plain', 'Lacquer']],
+    hands: [['dauphine', 'Dauphine'], ['sword', 'Sword'], ['baton', 'Baton'], ['leaf', 'Leaf'], ['pencil', 'Pencil'], ['glow', 'Hologram'], ['cartoon', 'Cartoon']],
+    metal: [['steel', 'Steel'], ['gold', 'Gold'], ['rose', 'Rose'], ['blued', 'Blued'], ['black', 'Black'], ['red', 'Red'], ['cyan', 'Cyan']],
+    idx: [['baton', 'Baton'], ['dagger', 'Dagger'], ['wedge', 'Wedge'], ['dot', 'Dot'], ['crystal', 'Crystal'], ['star', 'Star'], ['arabic', 'Arabic'], ['roman', 'Roman']],
+    comps: [['none', 'None'], ['sec', 'Seconds'], ['chr30', 'Chrono 30'], ['chr12', 'Chrono 12'], ['pwr', 'Solar power'], ['moon', 'Moon'], ['24h', '24 h'], ['weather', 'Weather'], ['rings', 'Activity rings'], ['tide', 'Harbor tide'], ['vitals', 'Vitals'], ['cal', 'Calendar']],
+    bezel: [['tachy', 'Tachymeter'], ['diver', 'Diver'], ['smooth', 'Smooth'], ['fluted', 'Fluted'], ['screws', 'Screwed'], ['glyph', 'Glyph'], ['hours24', '24 hour']],
+    dials: ['#1846a6', '#0b0d12', '#e9ecf1', '#b3141f', '#0f5a3a', '#d7a52c', '#4b2a7a', '#0e3448', '#6b737d', '#e8d9b8']
+  };
+  const lumOf = hex => { const n = parseInt(hex.slice(1), 16); return (.299 * (n >> 16) + .587 * ((n >> 8) & 255) + .114 * (n & 255)) / 255; };
+  const custom = def({
+    id: 'custom', name: 'Your Build', desc: 'Designed in the Face Builder', finish: 'steel', builder: true,
+    bezel: {}, hands: {}, lume: '#9dffb0',
+    configure(c) {
+      c = Object.assign({}, CUSTOM_DEFAULT, c || {});
+      this.cfg = c; this.name = c.name || 'Your Build'; this.finish = c.finish || 'steel'; this.lume = c.lume;
+      const light = lumOf(c.dial) > .55;
+      this.ink = light ? '#1a1f2a' : '#eef2f7';
+      this.bezel = { type: c.bezel, color: [c.bezelColor, SM.shade(c.bezelColor, -.55)], ink: lumOf(c.bezelColor) > .55 ? '#1a1f2a' : '#eef2f7', accent: c.sec, lume: c.lume, text: 'SUPERMAN · ' + String(c.name || '').toUpperCase() + ' · ' };
+      this.hands = { style: c.hands, metal: c.metal, lume: c.lume, sec: c.sec, counter: 'shield', subColor: c.sec, hourL: 84, minL: 128 };
+      this.desc = 'Face Builder · ' + c.tex + ' · ' + c.hands + ' hands';
+      return this;
+    },
+    render(ctx) {
+      const c = this.cfg || this.configure().cfg, ink = this.ink, light = ink === '#1a1f2a', u = SM.uid('cu');
+      let g = K.base(SM.shade(c.dial, -.5)) + K.rehaut({ color: light ? ['#ffffff', '#b8c0cc'] : [SM.shade(c.dial, .25), SM.shade(c.dial, -.6)], ink, type: 'minutes' });
+      g += K.radial(u + 'g', [[0, SM.shade(c.dial, .18)], [.7, c.dial], [1, SM.shade(c.dial, -.45)]], .45, .38, .7);
+      g += K.disc(`url(#${u}g)`);
+      const tex = { sunburst: ['p-sunburst', .95, 'overlay'], guilloche: ['p-guilloche', .85, 'overlay'], barley: ['p-barley', .8, 'overlay'], brushR: ['p-brushR', .6, 'overlay'], carbon: ['p-carbon', .9, 'multiply'], facets: ['p-facets', .6, 'overlay'] }[c.tex];
+      if (tex) g += K.disc(`url(#${tex[0]})`, tex[1], tex[2]);
+      g += K.dome(.8) + K.track(141, light ? 'rgba(20,24,32,.75)' : 'rgba(255,255,255,.75)', 'rail');
+      const occupied = { 9: c.left !== 'none', 3: c.right !== 'none', 6: c.bottom !== 'none' };
+      const skip = Object.keys(occupied).filter(k => occupied[k]).map(Number);
+      if (c.idx === 'arabic' || c.idx === 'roman') g += K.numerals({ roman: c.idx === 'roman', r: 120, size: 15, fill: ink, font: c.idx === 'roman' ? F.roman : F.cond, hours: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].filter(h => !skip.includes(h)), applied: true, lume: true });
+      else g += K.indices({ type: c.idx, r0: 110, r1: 134, w: 7, metal: c.metal, lume: c.lume, twelve: 'double', skip, bigQuarters: true });
+      const subSt = { bg: light ? '#f4f6f9' : SM.shade(c.dial, -.35), tex: light ? 'p-snail' : false, ink, ring: light ? '#9aa3ae' : SM.shade(c.dial, .35), hand: c.sec, core: SM.shade(c.dial, -.6), sky: SM.shade(c.dial, -.6), accent: c.sec };
+      const hasSubs = c.left !== 'none' || c.right !== 'none';
+      if (c.shield !== 'none') g += SM.shield(300, hasSubs ? 326 : 332, hasSubs ? 56 : 72, c.shield);
+      g += K.text(300, hasSubs ? 364 : 380, String(c.name || 'SUPERMAN').toUpperCase().slice(0, 22), { size: 7, fill: light ? '#8a1020' : '#f6d36b', ls: 2.6, weight: 700 });
+      if (c.left !== 'none') g += K.sub(ctx, c.left, 228, 402, 30, subSt);
+      if (c.right !== 'none') g += K.sub(ctx, c.right, 372, 402, 30, subSt);
+      if (c.bottom !== 'none') g += K.sub(ctx, c.bottom, 300, 474, 32, subSt);
+      return g;
+    }
+  });
+  custom.configure(SM.store.get('custom', null));
+
   SM.faceById = id => FACES.find(x => x.id === id) || FACES[0];
 
   /* full dial svg markup for a face (used for live dial + thumbnails) */
@@ -540,7 +807,9 @@
     const ctx = { subs: [] };
     const clip = `<clipPath id="dial-clip"><circle cx="${CX}" cy="${CY}" r="146"/></clipPath>`;
     let body = face.render(ctx);
+    /* v3 micro-detail pass: fine grain + ambient-occlusion ring where the dial meets the rehaut */
+    if (!face.noMicro) body += `<circle cx="${CX}" cy="${CY}" r="146" fill="url(#p-grain)" opacity=".22" style="mix-blend-mode:overlay"/><circle cx="${CX}" cy="${CY}" r="158" fill="url(#g-ao)"/>`;
     const over = face.overlay ? face.overlay(ctx) : '';
-    return { markup: `<defs>${clip}</defs><g>${body}</g>`, overlay: over, subs: ctx.subs };
+    return { markup: `<defs>${clip}</defs><g>${body}</g>`, overlay: over, subs: ctx.subs, anim: !forThumb && face.anim ? face.anim() : [] };
   };
 })(window.SM);

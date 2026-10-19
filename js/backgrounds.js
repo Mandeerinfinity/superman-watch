@@ -4,7 +4,7 @@
   const f = SM.f;
   const BG = SM.BACKGROUNDS = [];
   const def = o => { BG.push(o); return o; };
-  const DPR = () => Math.min(1.5, window.devicePixelRatio || 1);
+  const DPR = () => Math.min(SM.Q ? SM.Q.p().bgScale : 1.5, window.devicePixelRatio || 1);
 
   function layer(el, html, depth, cls, style) {
     const d = document.createElement('div');
@@ -181,7 +181,7 @@
       if (key === this.key) return; this.key = key;
       const T = SM.tex.suit, { ctx, c } = this.cv;
       T.light(lx * 1.25, ly * 1.25, this.img.data); this.tx.putImageData(this.img, 0, 0);
-      const pat = ctx.createPattern(this.tile, 'repeat'), r = c.width / Math.max(1, this.cv.w), sc = .42 * r;
+      const pat = ctx.createPattern(this.tile, "repeat"), r = c.width / Math.max(1, this.cv.w), sc = .2 * 64 / T.W * r;
       if (pat.setTransform) pat.setTransform(new DOMMatrix([sc, 0, 0, sc, 0, 0]));
       ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = pat; ctx.fillRect(0, 0, c.width, c.height);
       const gx = (.5 + lx * .42) * c.width, gy = (.5 + ly * .42) * c.height, g = ctx.createRadialGradient(gx, gy, 0, gx, gy, c.width * .5);
@@ -288,10 +288,11 @@
         const x = ((s.x * w - t * 4 * s.z - mx * 30 * s.z) % w + w) % w, y = ((s.y * h - my * 20 * s.z) % h + h) % h;
         const a = .45 + .55 * Math.sin(t * (1 + s.z * 2) + s.p) * .5 + .25;
         ctx.globalAlpha = Math.max(.1, Math.min(1, a)); ctx.fillStyle = s.c;
-        const rad = s.z * 1.5; ctx.beginPath(); ctx.arc(x, y, rad, 0, 6.283); ctx.fill();
+        const rad = s.z * 1.5; if (rad < 1) ctx.fillRect(x - rad, y - rad, rad * 2, rad * 2); else { ctx.beginPath(); ctx.arc(x, y, rad, 0, 6.283); ctx.fill(); }
       }
       ctx.globalAlpha = 1;
-      if (this.frame++ % 3 === 0) { this.rot += .12; this.ex.putImageData(this.er(this.ex, this.rot), 0, 0); }
+      /* v3 perf: the per-pixel globe re-projection is time-based (4 Hz, same 2.4°/s spin) instead of every 3rd frame */
+      if (!this.eT || t - this.eT > .25 || t < this.eT) { this.rot += this.eT && t > this.eT ? (t - this.eT) * 2.4 : .6; this.eT = t; this.ex.putImageData(this.er(this.ex, this.rot), 0, 0); }
       const er = Math.min(w, h) * .34, ex = w * .86 - mx * 14, ey = h * .92 - my * 10;
       const glow = ctx.createRadialGradient(ex, ey, er * .96, ex, ey, er * 1.18); glow.addColorStop(0, 'rgba(90,170,255,.55)'); glow.addColorStop(.3, 'rgba(60,130,255,.2)'); glow.addColorStop(1, 'rgba(40,90,255,0)');
       ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(ex, ey, er * 1.25, 0, 6.283); ctx.fill();
@@ -380,7 +381,7 @@
 
   /* ---------- 7. SMALLVILLE SUNSET ---------- */
   def({
-    id: 'smallville', name: 'Smallville Sunset', preview: 'linear-gradient(180deg,#2b3a6b,#e0784a 55%,#ffd27a 75%,#3a2a12)', exp: ['#e0784a', '#2b3a6b'],
+    id: 'smallville', maxHz: 30, name: 'Smallville Sunset', preview: 'linear-gradient(180deg,#2b3a6b,#e0784a 55%,#ffd27a 75%,#3a2a12)', exp: ['#e0784a', '#2b3a6b'],
     build(el) {
       layer(el, '', 0, 'fill', 'background:linear-gradient(180deg,#1f2c5c 0%,#6a4a7a 28%,#d86a4a 52%,#f5a54a 66%,#ffd98a 74%,#e8a050 80%)');
       layer(el, svg(`<defs><radialGradient id="sg"><stop offset="0" stop-color="#fffbe0"/><stop offset=".25" stop-color="#ffe9a0"/><stop offset=".6" stop-color="#ffb050" stop-opacity=".45"/><stop offset="1" stop-color="#ff8030" stop-opacity="0"/></radialGradient></defs>
@@ -403,12 +404,18 @@
       const g = ctx.createLinearGradient(0, h - H * .2, 0, h); g.addColorStop(0, '#5a3a14'); g.addColorStop(1, '#2a1a08');
       ctx.fillStyle = g; ctx.fillRect(0, h - H * .16, w, H * .16);
       ctx.lineWidth = 1.6;
-      for (const s of this.stalks) {
-        const x = s.x * w, base = h, top = h - s.h * H, sway = Math.sin(t * 1.4 + s.x * 9 + s.p) * 7 + mx * 6;
-        ctx.strokeStyle = s.c < .5 ? '#c8902e' : s.c < .8 ? '#8a5a1a' : '#f0c060';
-        ctx.beginPath(); ctx.moveTo(x, base); ctx.quadraticCurveTo(x + sway * .3, (base + top) / 2, x + sway, top); ctx.stroke();
-        ctx.fillStyle = ctx.strokeStyle; ctx.beginPath(); ctx.ellipse(x + sway, top - 6, 2.4, 8, sway * .03, 0, 6.283); ctx.fill();
-      }
+      /* v3 perf: batched into one stroke + one fill per colour (6 draw calls instead of ~1000), count follows the quality tier */
+      const n = Math.round(this.stalks.length * Math.max(.5, (SM.Q && SM.Q.p && SM.Q.p().particles) || 1));
+      ['#c8902e', '#8a5a1a', '#f0c060'].forEach((col, ci) => {
+        const st = new Path2D(), hd = new Path2D();
+        for (let i = 0; i < n; i++) {
+          const s = this.stalks[i], k = s.c < .5 ? 0 : s.c < .8 ? 1 : 2; if (k !== ci) continue;
+          const x = s.x * w, base = h, top = h - s.h * H, sway = Math.sin(t * 1.4 + s.x * 9 + s.p) * 7 + mx * 6;
+          st.moveTo(x, base); st.quadraticCurveTo(x + sway * .3, (base + top) / 2, x + sway, top);
+          hd.moveTo(x + sway + 2.4, top - 6); hd.ellipse(x + sway, top - 6, 2.4, 8, sway * .03, 0, 6.283);
+        }
+        ctx.strokeStyle = ctx.fillStyle = col; ctx.stroke(st); ctx.fill(hd);
+      });
     },
     resize() { this.cv && this.cv.resize(); }
   });
@@ -458,11 +465,12 @@
         <circle cx="330" cy="900" r="460" fill="url(#ks)"/>
         <circle cx="1240" cy="210" r="46" fill="#cfe8f0"/><circle cx="1258" cy="200" r="44" fill="#1a3a4e"/>
         <circle cx="420" cy="140" r="22" fill="#e8d0b0"/><circle cx="413" cy="135" r="21" fill="#3a5a6a" opacity=".6"/>`), 4);
-      let isl = '';
+      /* v3 perf: islands bob via composited wrapper divs (CSS transform on SVG children forced a full SVG repaint every frame) */
+      const isl = ['', ''];
       [[1240, 330, .8], [380, 300, .6], [1330, 600, .55]].forEach(([x, y, s], i) => {
-        isl += `<g class="float" style="animation-delay:${-i * 1.7}s"><g transform="translate(${x} ${y}) scale(${s})"><path d="M-110 0 L110 0 L60 60 L20 130 L-10 70 L-50 90 Z" fill="#132a36"/><path d="M-110 0 L110 0 L60 60 Z" fill="#1d4252"/>${crystalsSVG(100 + i, 7, -90, 90, 2, 60, 180, ['#6fd6e8', '#2f8aa8', '#e8ffff'], '#9ff4ff')}</g></g>`;
+        isl[i === 1 ? 1 : 0] += `<g><g transform="translate(${x} ${y}) scale(${s})"><path d="M-110 0 L110 0 L60 60 L20 130 L-10 70 L-50 90 Z" fill="#132a36"/><path d="M-110 0 L110 0 L60 60 Z" fill="#1d4252"/>${crystalsSVG(100 + i, 7, -90, 90, 2, 60, 180, ['#6fd6e8', '#2f8aa8', '#e8ffff'], '#9ff4ff')}</g></g>`;
       });
-      layer(el, svg(isl), 9);
+      layer(el, isl.map((m, k) => `<div class="floatwrap" style="animation-delay:${-k * 2.3}s">${svg(m)}</div>`).join(''), 9);
       layer(el, svg(crystalsSVG(95, 24, -60, 1660, 1000, 200, 560, ['#0e2230', '#07131c', '#6fd6e8'], '#6fd6e8')), 16);
       layer(el, '', 0, 'vignette');
     },
@@ -492,6 +500,103 @@
       const is = this.flare.children, r = this.flare.getBoundingClientRect(), cx = .76, cy = .62, dx = (.5 + mx * .15) - cx, dy = (.5 + my * .15) - cy;
       [.5, .9, 1.3, 1.7].forEach((k, i) => { is[i].style.left = f((cx + dx * k) * 100) + '%'; is[i].style.top = f((cy + dy * k) * 100) + '%'; });
     }
+  });
+
+  /* ---------- 11. METROPOLIS HARBOR (v3) ---------- */
+  def({
+    id: 'harbor', name: 'Metropolis Harbor', preview: 'linear-gradient(180deg,#0a1433,#3a3a78 45%,#e0885a 58%,#0b2a4a 60%,#051226)', exp: ['#1a2a5a', '#051226'],
+    build(el) {
+      layer(el, '', 0, 'fill', 'background:linear-gradient(180deg,#040a1e 0%,#101c46 30%,#34306c 46%,#9a5a72 55%,#f09a64 60%,#ffd09a 61.5%,#0b2340 62%,#061430 100%)');
+      layer(el, svg(stars(160, 41, 1600, 1000, .42, 1.4)), 2);
+      layer(el, svg(`<defs><radialGradient id="hmg"><stop offset="0" stop-color="#fff4dc" stop-opacity=".5"/><stop offset="1" stop-color="#fff4dc" stop-opacity="0"/></radialGradient></defs><circle cx="380" cy="190" r="120" fill="url(#hmg)"/><circle cx="380" cy="190" r="34" fill="#f6f0dc"/><circle cx="370" cy="182" r="7" fill="#dcd4b8"/><circle cx="392" cy="200" r="5" fill="#dcd4b8"/>`), 3);
+      /* skyline standing on the waterline (horizon at 62%) */
+      const sky = `<defs>${windowPattern('hw1', 51, .16, '#9fb4e8', 96, 120)}${windowPattern('hw2', 52, .34, '#ffd98a', 96, 120)}</defs>
+        ${skyline(61, 20, 90, 300, '#1b2550', 'hw1', 620, { maxW: 80, gap: 3 })}${skyline(62, 16, 60, 220, '#0c1430', 'hw2', 620, { maxW: 120, gap: 16 })}
+        <g transform="translate(1180 0)"><rect x="-44" y="430" width="88" height="190" fill="#0c1430"/><rect x="-38" y="440" width="76" height="175" fill="url(#hw2)"/><circle cx="0" cy="398" r="34" fill="#c8902e"/><ellipse cx="0" cy="398" rx="52" ry="11" fill="none" stroke="#e8c26a" stroke-width="4" transform="rotate(-14 0 398)"/><rect x="-5" y="416" width="10" height="16" fill="#0c1430"/></g>`;
+      layer(el, svg(sky, 'xMidYMid slice'), 8);
+      /* lighthouse + rotating beam (compositor-only transform animation) */
+      layer(el, svg(`<g transform="translate(1440 0)"><path d="M-60 640 Q0 600 60 640 L60 700 L-60 700 Z" fill="#060c1c"/><path d="M-16 610 L-11 470 L11 470 L16 610 Z" fill="#e8ecf4"/><rect x="-12" y="505" width="24" height="16" fill="#c8202e"/><rect x="-14" y="560" width="28" height="16" fill="#c8202e"/><rect x="-15" y="452" width="30" height="18" fill="#1b2230"/><rect x="-11" y="455" width="22" height="12" fill="#ffe7a0"/><path d="M-17 452 L0 436 L17 452 Z" fill="#c8202e"/></g>`, 'xMidYMid slice'), 10);
+      layer(el, '<i class="lh-beam"></i>', 10, 'lh');
+      this.cv = canvasLayer(el, 6, 'harbor-water', true);
+      this.cv.c.parentNode.style.cssText += ';top:auto;height:calc(38% + 40px);bottom:-40px';
+      this.cv.resize();
+      const r = SM.rng(77); this.lights = [];
+      for (let i = 0; i < 70; i++) this.lights.push({ x: r(), c: r() < .7 ? [255, 214, 138] : r() < .5 ? [159, 180, 232] : [255, 90, 80], a: .25 + r() * .6, w: 1 + r() * 2.5, p: r() * 6.28 });
+      layer(el, '', 0, 'vignette');
+    },
+    update(t, mx, my) {
+      const { ctx, w, h } = this.cv; if (!w) return;
+      ctx.clearRect(0, 0, w, h);
+      const tide = SM.cx ? (SM.app.tide || SM.cx.tide(new Date())) : { level: .5 };
+      const g = ctx.createLinearGradient(0, 0, 0, h); g.addColorStop(0, '#16305a'); g.addColorStop(.12, '#0c2344'); g.addColorStop(1, '#030b1a');
+      ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+      /* sunset glow on the water */
+      const sg = ctx.createRadialGradient(w * .5, 0, 0, w * .5, 0, w * .5); sg.addColorStop(0, 'rgba(255,170,110,.35)'); sg.addColorStop(1, 'rgba(255,170,110,0)'); ctx.fillStyle = sg; ctx.fillRect(0, 0, w, h * .5);
+      ctx.globalCompositeOperation = 'lighter';
+      /* broken reflection columns for each city light */
+      for (const L of this.lights) {
+        const x0 = (L.x * w - mx * 20 + w) % w;
+        for (let k = 0; k < 14; k++) {
+          const y = 4 + k * k * h * .0045 + k * 3, amp = 1 + k * .9;
+          const x = x0 + Math.sin(t * 1.6 + L.p + k * .9) * amp, len = L.w * (2 + k * .6) * (.6 + .4 * Math.sin(t * 2.3 + k + L.p));
+          ctx.fillStyle = `rgba(${L.c[0]},${L.c[1]},${L.c[2]},${(L.a * (1 - k / 14) * .55).toFixed(3)})`;
+          ctx.fillRect(x - len / 2, y, len, 1.2 + k * .15);
+        }
+      }
+      /* moon path */
+      for (let k = 0; k < 26; k++) { const y = 6 + k * k * h * .0016 + k * 2, x = w * .238 + Math.sin(t * 1.3 + k * 1.1) * (3 + k * .8), len = 6 + k * 1.8; ctx.fillStyle = `rgba(255,244,220,${(.35 * (1 - k / 26)).toFixed(3)})`; ctx.fillRect(x - len / 2, y, len, 1.4); }
+      ctx.globalCompositeOperation = 'source-over';
+      /* ripple lines */
+      ctx.strokeStyle = 'rgba(160,200,255,.07)'; ctx.lineWidth = 1;
+      for (let k = 0; k < 22; k++) { const y = 10 + k * k * h * .002 + k * 4; ctx.beginPath(); for (let x = 0; x <= w; x += 24) ctx.lineTo(x, y + Math.sin(x * .02 + t * 1.2 + k) * (1 + k * .15)); ctx.stroke(); }
+      /* pier with tide gauge (water level follows the tide model) */
+      const px = w * .08, top = h * .02, lvl = h * (.42 - tide.level * .3);
+      ctx.fillStyle = '#0a0f1c'; ctx.fillRect(px - 60, top, 170, 10);
+      [0, 50, 100].forEach(dx => { ctx.fillStyle = '#131a2a'; ctx.fillRect(px - 50 + dx, top, 9, h); ctx.fillStyle = 'rgba(40,90,60,.55)'; ctx.fillRect(px - 50 + dx, lvl - 6, 9, h); });
+      ctx.fillStyle = '#e8ecf4'; ctx.fillRect(px + 40, top + 10, 12, h * .5);
+      ctx.fillStyle = '#c8202e'; for (let k = 0; k < 8; k++) ctx.fillRect(px + 40, top + 14 + k * h * .06, 12, 2);
+      ctx.fillStyle = 'rgba(6,20,40,.82)'; ctx.fillRect(px - 60, lvl, 170, h - lvl);
+      ctx.strokeStyle = 'rgba(180,220,255,.45)'; ctx.beginPath(); ctx.moveTo(px - 60, lvl); for (let x = px - 60; x <= px + 110; x += 8) ctx.lineTo(x, lvl + Math.sin(x * .1 + t * 2) * 1.5); ctx.stroke();
+    },
+    resize() { this.cv && this.cv.resize(); },
+    exportCanvas() { return this.cv && this.cv.c; }
+  });
+
+  /* ---------- 12. PHANTOM ZONE (v3) ---------- */
+  def({
+    id: 'phantom', name: 'Phantom Zone', preview: 'radial-gradient(circle at 50% 50%,#6a4ad8 0,#1a0d3a 30%,#050210 70%)', exp: ['#1a0d3a', '#050210'],
+    build(el) {
+      layer(el, '', 0, 'fill', 'background:radial-gradient(ellipse at 50% 45%,#2a1860 0%,#12082c 40%,#040109 80%)');
+      layer(el, svg(stars(260, 71, 1600, 1000, 1, 1.3)), 2);
+      /* vortex: one small pre-rendered sprite, rotated on a low-res canvas (v3 perf: replaces two 170vmax masked CSS layers) */
+      this.cv = canvasLayer(el, 4, 'pz-cv', 1);
+      if (!this.sprite) {
+        const S = 640, c = document.createElement('canvas'); c.width = c.height = S; const x = c.getContext('2d');
+        x.translate(S / 2, S / 2);
+        for (let a = 0; a < 36; a++) { x.rotate(Math.PI * 2 / 36); x.beginPath(); x.moveTo(0, 0); x.arc(0, 0, S / 2, -0.044, 0.044); x.closePath(); x.fillStyle = 'rgba(170,140,255,.16)'; x.fill(); }
+        x.globalCompositeOperation = 'destination-in';
+        const m = x.createRadialGradient(0, 0, 0, 0, 0, S / 2); m.addColorStop(0, 'rgba(0,0,0,0)'); m.addColorStop(.06, 'rgba(0,0,0,0)'); m.addColorStop(.3, '#000'); m.addColorStop(1, 'rgba(0,0,0,0)');
+        x.fillStyle = m; x.fillRect(-S / 2, -S / 2, S, S);
+        this.sprite = c;
+      }
+      const r = SM.rng(88); let panes = '';
+      for (let i = 0; i < 9; i++) {
+        const s = 90 + r() * 170, x = r() * 100, y = r() * 100, d = 26 + r() * 30, rot = r() * 360;
+        panes += `<i class="pz-pane" style="left:${f(x)}%;top:${f(y)}%;width:${f(s)}px;height:${f(s)}px;margin:${f(-s / 2)}px;--r:${f(rot)}deg;animation-duration:${f(d)}s;animation-delay:${f(-r() * d)}s"></i>`;
+      }
+      layer(el, panes, 9, 'pz-panes');
+      layer(el, '', 0, 'vignette');
+    },
+    update(t) {
+      const { ctx, w, h } = this.cv; if (!w) return;
+      ctx.clearRect(0, 0, w, h);
+      const D = Math.hypot(w, h) * 1.25, cx = w / 2, cy = h * .45;
+      [[t * 2 * Math.PI / 80, 1], [-t * 2 * Math.PI / 130, .6]].forEach(([a, al]) => {
+        ctx.save(); ctx.globalAlpha = al; ctx.translate(cx, cy); ctx.rotate(a); ctx.drawImage(this.sprite, -D / 2, -D / 2, D, D); ctx.restore();
+      });
+    },
+    resize() { this.cv && this.cv.resize(); },
+    exportCanvas() { return this.cv && this.cv.c; }
   });
 
   SM.bgById = id => BG.find(b => b.id === id) || BG[0];

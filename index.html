@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Nick's Superman Watch</title>
-<meta name="description" content="Nick's Superman wristwatch: a detailed interactive watch with chronograph, timer, alarms, world time, sky data, focus mode and super powers.">
+<meta name="description" content="Nick's Superman wristwatch: a detailed interactive watch with 20 faces, a face builder, a 3D S-shield hologram, live weather, tide and activity complications, chronograph, alarms and super powers.">
 <meta name="theme-color" content="#0b1a3d">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -20,9 +20,10 @@
 <div id="bg"></div>
 <div id="app">
   <header id="topbar">
-    <div class="brand"><span id="brand-shield"></span><div><b>Nick's Superman Watch</b><small>v2 · Krypton Cal. S-38</small></div></div>
+    <div class="brand"><span id="brand-shield"></span><div><b>Nick's Superman Watch</b><small>v3 · Krypton Cal. S-38</small></div></div>
     <div id="top-clock" aria-live="off"></div>
     <nav id="tb" aria-label="Quick actions">
+      <button data-act="holo-toggle" class="tb-holo" title="3D hologram (O)"><span>Hologram</span></button>
       <button data-act="surprise" title="Surprise me: random face, strap and scene (D)"><span>Surprise me</span></button>
       <button data-act="watchonly" title="Watch-only mode (W)"><span>Watch only</span></button>
       <button data-act="fullscreen" title="Fullscreen (Enter)"><span>Fullscreen</span></button>
@@ -38,6 +39,18 @@
     <div id="face-caption"><b id="cap-name"></b><span id="cap-desc"></span></div>
     <button class="btn wo-exit" data-act="exit-wo">Exit watch-only</button>
     <canvas id="fx"></canvas>
+    <div id="holo-ui" hidden>
+      <div id="holo-host"></div>
+      <div class="holo-bar" role="toolbar" aria-label="Hologram controls">
+        <button class="hv" data-act="holo-variant" data-id="classic" title="Classic red and gold 3D"><i style="background:linear-gradient(135deg,#c8102e,#ffd21f)"></i><span>Classic</span></button>
+        <button class="hv" data-act="holo-variant" data-id="cyan" title="Cyan hologram"><i style="background:radial-gradient(#bff6ff,#1fb8e0 60%,#03314a)"></i><span>Cyan</span></button>
+        <button class="hv" data-act="holo-variant" data-id="kryptonite" title="Kryptonite green"><i style="background:radial-gradient(#d0ffd8,#39ff6a 55%,#063a16)"></i><span>Kryptonite</span></button>
+        <button class="hv" data-act="holo-variant" data-id="gold" title="Solid gold"><i style="background:linear-gradient(135deg,#fff4c4,#e1b24c 45%,#7b5314)"></i><span>Gold</span></button>
+        <button class="hv tilt" data-act="motion" title="Enable tilt (iPhone asks permission)"><span>Tilt</span></button>
+        <button class="hv exit" data-act="holo-exit" title="Close hologram (Esc)" aria-label="Close hologram"><span>✕</span></button>
+      </div>
+      <div class="holo-hint">Drag to spin · pinch or scroll to zoom · tilt your phone</div>
+    </div>
   </main>
   <aside id="panel" aria-label="Watch controls">
     <nav id="tabs"></nav>
@@ -50,15 +63,18 @@
 <div id="toast" role="status" aria-live="polite"></div>
 <noscript><p style="position:fixed;top:40%;width:100%;text-align:center">Nick's Superman Watch needs JavaScript.</p></noscript>
 <script src="js/util.js"></script>
+<script src="js/quality.js"></script>
 <script src="js/landmask.js"></script>
 <script src="js/textures.js"></script>
 <script src="js/shield.js"></script>
 <script src="js/audio.js"></script>
 <script src="js/astro.js"></script>
+<script src="js/complications.js"></script>
 <script src="js/watch.js"></script>
 <script src="js/faces.js"></script>
 <script src="js/backgrounds.js"></script>
 <script src="js/powers.js"></script>
+<script src="js/game.js"></script>
 <script src="js/app.js"></script>
 <script src="js/ui.js"></script>
 <script>document.addEventListener('DOMContentLoaded', function () { SM.app.boot(); });</script>

@@ -46,7 +46,7 @@ button,input,select{font:inherit;color:inherit}
 .sunwrap{inset:0}
 .bigsun{position:absolute;left:4%;top:10%;width:38vmin;height:38vmin;border-radius:50%;box-shadow:0 0 90px 30px rgba(255,80,20,.55),0 0 260px 90px rgba(200,30,10,.35);animation:sunpulse 7s ease-in-out infinite alternate}
 @keyframes sunpulse{0%{transform:scale(1)}100%{transform:scale(1.025)}}
-.rays{background:repeating-conic-gradient(from 0deg at 50% -20%,rgba(255,255,255,.07) 0 2.5deg,transparent 2.5deg 8deg);mix-blend-mode:screen;transform-origin:50% -20%;animation:rays 40s ease-in-out infinite alternate}
+.rays{background:repeating-conic-gradient(from 0deg at 50% -20%,rgba(255,255,255,.07) 0 2.5deg,transparent 2.5deg 8deg);will-change:transform;transform-origin:50% -20%;animation:rays 40s ease-in-out infinite alternate}
 @keyframes rays{from{transform:rotate(-5deg)}to{transform:rotate(5deg)}}
 .blades{transform-box:fill-box;transform-origin:center;animation:spin360 7s linear infinite}
 @keyframes spin360{to{transform:rotate(360deg)}}
@@ -88,7 +88,7 @@ button,input,select{font:inherit;color:inherit}
 .ly-dial>svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
 .ly-dial{transition:opacity .6s ease,filter .6s ease}
 .ly-dial.ghost{transition:opacity .75s ease,filter .75s ease,transform .75s ease}
-.ly-dial.ghost.out{opacity:0;filter:blur(3px);transform:scale(.985)}
+.ly-dial.ghost.out{opacity:0;transform:scale(.985)}
 canvas.solar{position:absolute;left:25.667%;top:31.75%;width:48.667%;height:36.5%;border-radius:50%}
 .frost{left:23.667%!important;top:30.25%!important;width:52.667%!important;height:39.5%!important;border-radius:50%;opacity:0}
 .ly-shadow{transition:transform .2s linear}
@@ -162,7 +162,7 @@ body.p-lume #panel,body.p-lume #topbar{opacity:.35}
 
 /* ---------- panel ---------- */
 #panel{will-change:transform;display:flex;flex-direction:column;min-height:0;background:linear-gradient(180deg,rgba(9,15,34,.94),rgba(5,8,20,.97));border-left:1px solid var(--line);box-shadow:-20px 0 40px rgba(0,0,0,.35)}
-#tabs{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;padding:10px 10px 8px;border-bottom:1px solid var(--line);background:rgba(0,0,0,.18)}
+#tabs{display:grid;grid-template-columns:repeat(8,1fr);gap:4px;padding:10px 10px 8px;border-bottom:1px solid var(--line);background:rgba(0,0,0,.18)}
 #tabs button{display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 2px 6px;border-radius:9px;border:1px solid transparent;background:transparent;cursor:pointer;color:#b8c3d8;font-size:10.5px;font-weight:700;letter-spacing:.03em;line-height:1.05;text-align:center}
 #tabs button:hover{background:rgba(255,255,255,.06);color:#fff}
 #tabs button.on{background:linear-gradient(180deg,rgba(227,32,47,.38),rgba(227,32,47,.14));border-color:rgba(255,90,100,.55);color:#fff}
@@ -274,7 +274,7 @@ input[type=range]{accent-color:var(--red);width:100%}
 /* ---------- overlays ---------- */
 #toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,30px);opacity:0;z-index:80;padding:11px 18px;border-radius:12px;background:rgba(6,10,24,.92);border:1px solid rgba(255,210,31,.45);box-shadow:0 10px 30px rgba(0,0,0,.5);font-weight:700;letter-spacing:.02em;transition:opacity .25s,transform .25s;pointer-events:none;max-width:90vw;text-align:center}
 #toast.show{opacity:1;transform:translate(-50%,0)}
-#modal,#help{position:fixed;inset:0;z-index:70;display:flex;align-items:center;justify-content:center;background:rgba(0,0,6,.62);backdrop-filter:blur(4px)}
+#modal,#help{position:fixed;inset:0;z-index:70;display:flex;align-items:center;justify-content:center;background:rgba(0,0,6,.72)}
 #modal[hidden],#help[hidden],#intro[hidden]{display:none}
 .modal-card{width:min(440px,92vw);max-height:88vh;overflow:auto;padding:22px;border-radius:18px;background:linear-gradient(180deg,#0e1836,#070c1c);border:1px solid rgba(255,210,31,.35);box-shadow:0 30px 80px rgba(0,0,0,.6);text-align:center}
 .modal-card h2{font-family:SMOswald,Oswald,sans-serif;letter-spacing:.06em;text-transform:uppercase;margin:8px 0}
@@ -327,7 +327,8 @@ input[type=range]{accent-color:var(--red);width:100%}
   #tb button{padding:0 8px;height:34px}
   #tb button[data-act="fullscreen"],#tb button[data-act="help"]{display:none}
   #panel{border-left:0;border-top:1px solid var(--line);border-radius:18px 18px 0 0}
-  #tabs{grid-template-columns:repeat(6,minmax(0,1fr))}
+  #tabs{grid-template-columns:repeat(8,minmax(0,1fr));gap:2px;padding:6px 6px 5px}
+  #tabs button{font-size:9px;padding:5px 1px 4px}
   #face-caption{bottom:6px;left:12px}
   #face-caption b{font-size:16px}
   #face-caption span{font-size:12px}
@@ -350,3 +351,124 @@ input[type=range]{accent-color:var(--red);width:100%}
 #stage{grid-row:2;grid-column:1}
 #panel{grid-row:2;grid-column:2;min-width:0}
 @media (max-width:820px){#panel{grid-row:3;grid-column:1}}
+
+/* ================= v3 ================= */
+/* iOS safe areas + dynamic viewport */
+#app{padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right);grid-template-rows:calc(62px + env(safe-area-inset-top)) minmax(0,1fr)}
+#topbar{padding-top:env(safe-area-inset-top)}
+#tab-body{padding-bottom:calc(26px + env(safe-area-inset-bottom))}
+@media (max-width:820px){#app{grid-template-rows:calc(54px + env(safe-area-inset-top)) minmax(0,58fr) minmax(0,42fr)}}
+.watch-only #app{grid-template-rows:0 minmax(0,1fr)}
+#toast{bottom:calc(26px + env(safe-area-inset-bottom))}
+/* touch: every target >= 44px, nothing depends on hover */
+@media (pointer:coarse){
+  #tb button{height:44px;min-width:44px;justify-content:center}
+  #tabs button{min-height:44px}
+  .btn{height:44px}.chip{height:44px;padding:0 14px}
+  .dot{width:44px;height:44px}
+  .icon-btn{min-width:44px;min-height:44px}
+  .check input{width:22px;height:22px}
+  .card:hover{transform:none}
+}
+@media (max-width:820px){#tb button[data-act="watchonly"]{display:none}#tb button span{display:none}}
+#tb button.tb-holo{background:linear-gradient(135deg,rgba(40,200,255,.28),rgba(20,80,140,.3));border-color:rgba(120,230,255,.55)}
+.holo-on #tb button.tb-holo{background:rgba(40,200,255,.45)}
+/* composited dial animations (phantom pane etc.) */
+.dial-anim{position:absolute;inset:0;pointer-events:none;will-change:transform}
+.dial-anim svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.dial-anim.spin{animation:dspin 30s linear infinite}
+@keyframes dspin{to{transform:rotate(360deg)}}
+.reduce-motion .dial-anim{animation-play-state:paused}
+/* tourbillon layer */
+.ly-tourb{z-index:auto}
+/* 3D hologram: face mode layer + power mode overlay */
+.ly-holo{position:absolute;left:5%;top:0;width:90%;height:62%;inset:auto;will-change:auto}
+.ly-holo .holo-cv{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+#holo-ui{position:absolute;inset:0;z-index:6}
+#holo-ui[hidden]{display:none}
+#holo-host{position:absolute;inset:0}
+#holo-host .holo-cv{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:grab}
+#holo-host .holo-cv:active{cursor:grabbing}
+.holo-bar{position:absolute;left:50%;bottom:calc(12px + env(safe-area-inset-bottom));transform:translateX(-50%);display:flex;gap:6px;padding:6px;border-radius:16px;background:rgba(2,10,20,.72);border:1px solid rgba(120,230,255,.35);box-shadow:0 8px 30px rgba(0,0,0,.45)}
+.holo-bar .hv{min-width:44px;height:44px;display:flex;align-items:center;gap:6px;padding:0 10px;border-radius:11px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);cursor:pointer;font-weight:700;font-size:12.5px;color:#dff8ff}
+.holo-bar .hv i{width:18px;height:18px;border-radius:50%;flex:none;box-shadow:0 0 8px rgba(120,230,255,.4)}
+.holo-bar .hv.on{border-color:#7fe8ff;background:rgba(63,224,255,.18)}
+.holo-bar .exit{font-size:16px}
+.holo-hint{position:absolute;left:50%;top:calc(10px + env(safe-area-inset-top, 0px));transform:translateX(-50%);font-size:12.5px;letter-spacing:.08em;color:#bff6ff;opacity:.8;pointer-events:none;white-space:nowrap;text-shadow:0 1px 6px #000}
+@media (max-width:520px){.holo-bar .hv span{display:none}.holo-bar .hv.exit span,.holo-bar .hv.tilt span{display:inline}}
+/* Solar Recharge game */
+#game-cv{position:absolute;inset:0;width:100%;height:100%;z-index:7;touch-action:none;cursor:crosshair}
+#game-hud{position:absolute;left:0;right:0;top:0;z-index:8;display:grid;grid-template-columns:auto 1fr auto auto;align-items:center;gap:10px;padding:10px 12px;pointer-events:none;background:linear-gradient(180deg,rgba(40,20,0,.55),rgba(40,20,0,0))}
+#game-hud .g-exit{pointer-events:auto;width:44px;padding:0}
+.g-stat{display:flex;flex-direction:column;align-items:center;min-width:64px}
+.g-stat b{font-family:SMOswald,Oswald,sans-serif;font-size:30px;color:#ffe07a;font-variant-numeric:tabular-nums;line-height:1}
+.g-stat span{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#ffd9a0}
+.g-title{text-align:center;font-family:SMOswald,Oswald,sans-serif;letter-spacing:.2em;color:#fff3c4}
+.g-title small{display:block;font-family:SMRajdhani,Rajdhani,sans-serif;letter-spacing:.05em;color:#ffd9a0;font-size:13px}
+.g-bar{grid-column:1/-1;height:4px;border-radius:2px;background:rgba(255,255,255,.12);overflow:hidden}
+.g-bar i{display:block;height:100%;background:linear-gradient(90deg,#ff8a1a,#ffe07a);transform-origin:left center}
+#game-hud.hurt{animation:hurt .35s}
+@keyframes hurt{0%,100%{background-color:transparent}30%{background-color:rgba(60,255,110,.25)}}
+.game-on #face-caption,.game-on #status-chips{opacity:0}
+.game-end .muted{font-size:13px}
+/* Builder */
+.builder-top{display:grid;grid-template-columns:150px 1fr;gap:12px;align-items:center}
+.b-prev .thumb{width:150px;height:150px;display:block;filter:drop-shadow(0 6px 10px rgba(0,0,0,.5))}
+.b-side{display:flex;flex-direction:column;gap:8px}
+.b-side .field input{width:100%}
+.chips .chip.on,.chip.on{border-color:var(--gold);background:rgba(255,210,31,.16);color:#fff}
+.shield-pick{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.shield-pick .sp{height:48px;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,.04);cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center}
+.shield-pick .sp svg{height:36px;width:auto}
+.shield-pick .sp.on{border-color:var(--gold);background:rgba(255,210,31,.14)}
+.shield-pick .sp span{font-size:12px;color:var(--muted)}
+.b-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.b-grid .field{display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:#c9d3e6}
+.b-grid select,.b-grid input[type=color]{width:100%;min-height:40px}
+.dot.pick{overflow:hidden;background:conic-gradient(#f33,#fd3,#3f6,#3df,#63f,#f3d,#f33)}
+.dot.pick input{opacity:0;position:absolute;inset:0;width:100%;height:100%;cursor:pointer}
+/* Hologram tab */
+.grid.holo-vars{grid-template-columns:repeat(2,1fr)}
+.hv-sw{display:block;width:100%;height:42px;border-radius:8px;border:1px solid rgba(255,255,255,.14)}
+.big-btn{width:100%;height:52px;font-size:16px;background:linear-gradient(180deg,#1fb8e0,#0b5f86);border-color:#7fe8ff}
+.stats{font-size:12.5px;line-height:1.45;color:#b9c6dc}
+/* Today */
+.quote{margin:4px 0 12px;padding:12px 14px;border-left:3px solid var(--gold);background:rgba(255,210,31,.06);border-radius:0 12px 12px 0;font-family:SMPlayfair,Georgia,serif;font-size:16px;line-height:1.35}
+.quote small{display:block;margin-top:6px;font-family:SMRajdhani,Rajdhani,sans-serif;color:var(--muted);font-size:12px}
+.today-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.today-grid .tile{display:flex;flex-direction:column;gap:4px;padding:10px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.03);min-width:0}
+.today-grid .tile.wide{grid-column:1/-1}
+.today-grid .tile>small{color:var(--muted);letter-spacing:.06em;text-transform:uppercase;font-size:11px}
+.today-grid .tile span{font-size:12.5px;color:#c9d3e6}
+.wx-row{display:flex;align-items:center;gap:8px}
+.wx-ic{width:52px;height:52px}
+.wx-t{font-family:SMOswald,Oswald,sans-serif;font-size:34px}
+.rings-big{width:120px;height:120px;align-self:center;transform:rotate(0)}
+.tide-bar{position:relative;height:74px;border-radius:10px;background:linear-gradient(180deg,#0b1a38,#081226);overflow:hidden;border:1px solid rgba(160,200,255,.2)}
+.tide-bar i{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(180deg,#3fa0ff,#0b3a7a);border-top:2px solid #bfe6ff}
+.tide-bar em{position:absolute;right:8px;top:6px;font-style:normal;font-weight:700;color:#dff1ff}
+.ecg{width:100%;height:70px;background:#05080c;border-radius:8px}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;text-align:center;font-size:13px}
+.cal b{color:var(--muted);font-size:11px}
+.cal span{padding:4px 0;border-radius:8px}
+.cal span.today{background:var(--red);color:#fff;font-weight:800}
+.field.mini{display:flex;align-items:center;gap:6px;font-size:12.5px}.field.mini input{width:90px}
+/* Presets */
+.preset-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.preset-list li{display:flex;gap:6px;align-items:stretch}
+.preset-list .preset{flex:1;min-height:48px}
+.share-url{width:100%;margin:4px 0 8px;font-size:12px;padding:10px;border-radius:10px;border:1px solid var(--line);background:rgba(0,0,0,.25);color:#cfe0ff}
+/* Harbor + Phantom Zone scenes (transform/opacity animations only) */
+.lh{inset:-40px;overflow:hidden}
+.lh-beam{position:absolute;left:90%;top:47%;width:75vmax;height:70px;margin-top:-35px;background:linear-gradient(90deg,rgba(255,240,190,.45),rgba(255,240,190,0));clip-path:polygon(0 45%,100% 0,100% 100%,0 55%);transform-origin:0 50%;animation:lhsweep 9s ease-in-out infinite alternate;will-change:transform,opacity}
+@keyframes lhsweep{0%{transform:rotate(160deg) scaleX(1);opacity:.9}50%{transform:rotate(185deg) scaleX(.35);opacity:.25}100%{transform:rotate(210deg) scaleX(1);opacity:.9}}
+.pz-pane{position:absolute;border:1px solid rgba(220,210,255,.35);background:linear-gradient(135deg,rgba(220,210,255,.14),rgba(120,90,255,.03) 45%,rgba(255,255,255,.10) 55%,rgba(90,60,200,.02));animation:pzfloat 40s linear infinite;will-change:transform}
+@keyframes pzfloat{0%{transform:rotate(var(--r)) translate3d(0,0,0) scale(.9)}50%{transform:rotate(calc(var(--r) + 180deg)) translate3d(40px,-30px,0) scale(1.08)}100%{transform:rotate(calc(var(--r) + 360deg)) translate3d(0,0,0) scale(.9)}}
+/* v3: hologram overlay never collides with caption/chips; hint fades after a few seconds */
+.holo-on #face-caption{opacity:0}
+.holo-hint{animation:hintfade 6s ease forwards}
+@keyframes hintfade{0%,70%{opacity:.85}100%{opacity:0}}
+@media (max-width:820px){.holo-hint{top:auto;bottom:calc(70px + env(safe-area-inset-bottom));font-size:11.5px;letter-spacing:.04em}}
+.floatwrap{position:absolute;inset:0;animation:float 7s ease-in-out infinite alternate;will-change:transform}
+.floatwrap>svg{display:block;width:100%;height:100%}
+.reduce-motion .floatwrap{animation:none}
